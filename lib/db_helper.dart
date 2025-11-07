@@ -51,6 +51,14 @@ class DatabaseHelper {
   static const String colAssetYearlyAppreciation =
       'yearly_appreciation'; // New column
   static const String colAssetIcon = 'icon';
+
+  // Subscriptions Table
+  static const String subscriptionsTable = 'subscriptions';
+  static const String colSubId = 'id';
+  static const String colSubName = 'name';
+  static const String colSubAmount = 'amount';
+  static const String colSubNextDueDate = 'next_due_date';
+  static const String colSubIcon = 'icon';
   // Singleton pattern
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -117,6 +125,9 @@ class DatabaseHelper {
 
     // Create Assets Table
     await _createAssetsTable(db);
+
+    // Create Subscriptions Table
+    await _createSubscriptionsTable(db);
   }
 
   Future<void> _createBudgetsTable(Database db) async {
@@ -139,6 +150,18 @@ class DatabaseHelper {
         $colAssetValue REAL NOT NULL,
         $colAssetYearlyAppreciation REAL,
         $colAssetIcon TEXT
+      )
+    ''');
+  }
+
+  Future<void> _createSubscriptionsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $subscriptionsTable (
+        $colSubId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colSubName TEXT NOT NULL,
+        $colSubAmount REAL NOT NULL,
+        $colSubNextDueDate INTEGER NOT NULL,
+        $colSubIcon TEXT
       )
     ''');
   }

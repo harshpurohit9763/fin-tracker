@@ -5,6 +5,9 @@ import 'package:offline_expense_tracker/app_formater.dart';
 import 'package:offline_expense_tracker/shared_preferences_provider.dart';
 import 'package:offline_expense_tracker/insights_provider.dart';
 
+import 'manage_subscriptions_screen.dart';
+import 'subscription_provider.dart';
+
 class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
 
@@ -158,44 +161,63 @@ class _BreakdownRow extends StatelessWidget {
 }
 
 /// Card for tracking recurring bills and subscriptions.
-class _SubscriptionTrackerCard extends StatelessWidget {
+class _SubscriptionTrackerCard extends ConsumerWidget {
   const _SubscriptionTrackerCard();
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Recurring Bills & Subscriptions',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text('Total Monthly Cost: \$58.98',
-                style: Theme.of(context).textTheme.titleMedium),
-            const Divider(height: 24),
-            const ListTile(
-              leading: Icon(Icons.movie_filter),
-              title: Text('Netflix'),
-              subtitle: Text('Next due: Oct 25, 2024'),
-              trailing: Text('\$15.99'),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subscriptionsAsync = ref.watch(subscriptionListProvider);
+    final currency = ref.watch(currencyProvider);
+
+    return subscriptionsAsync.when(
+      data: (subs) {
+        final totalMonthlyCost =
+            subs.fold<double>(0.0, (sum, item) => sum + item.amount);
+
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Recurring Bills',
+                        style: Theme.of(context).textTheme.titleLarge),
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  const ManageSubscriptionsScreen())),
+                      child: const Text('Manage'),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                    'Total Monthly Cost: ${AppFormatters.formatCurrency(totalMonthlyCost, currency)}',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const Divider(height: 24),
+                if (subs.isEmpty)
+                  const Text('No subscriptions added.')
+                else
+                  ...subs.map((sub) => ListTile(
+                        leading: const Icon(Icons.receipt_long),
+                        title: Text(sub.name),
+                        subtitle: Text(
+                            'Next due: ${AppFormatters.formatDate(sub.nextDueDate)}'),
+                        trailing: Text(
+                            AppFormatters.formatCurrency(sub.amount, currency)),
+                      )),
+              ],
             ),
-            const ListTile(
-              leading: Icon(Icons.music_note),
-              title: Text('Spotify'),
-              subtitle: Text('Next due: Oct 28, 2024'),
-              trailing: Text('\$10.99'),
-            ),
-            const ListTile(
-              leading: Icon(Icons.fitness_center),
-              title: Text('Gym Membership'),
-              subtitle: Text('Next due: Nov 01, 2024'),
-              trailing: Text('\$32.00'),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, s) => Card(child: Center(child: Text('Error: $e'))),
     );
   }
 }
