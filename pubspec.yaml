@@ -1,0 +1,55 @@
+name: offline_expense_tracker
+description: A fully offline expense and EMI tracker.
+publish_to: 'none' # Remove this line if you want to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0' # Using modern Dart SDK
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod: ^2.5.1
+
+  # Database
+  sqflite: ^2.3.3+1
+  path_provider: ^2.1.3
+  path: ^1.9.0
+
+  # Charting
+  fl_chart: ^0.68.0
+
+  # Notifications
+  flutter_local_notifications: ^17.1.2
+  flutter_timezone: ^5.0.1
+  timezone: ^0.9.3
+
+  # Utility
+  intl: ^0.19.0 # For date and currency formatting
+
+  cupertino_icons: ^1.0.2
+  month_picker_dialog: ^6.6.0
+  shared_preferences: ^2.2.3
+  workmanager: ^0.9.0+3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  # Make sure your asset folders are declared here
+  assets:
+    - assets/icon/
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 21 # Optional: For adaptive icons
