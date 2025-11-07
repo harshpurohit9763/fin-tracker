@@ -23,6 +23,7 @@ class DatabaseHelper {
   static const String categoriesTable = 'categories';
   static const String colCatId = 'id';
   static const String colCatName = 'name';
+  static const String colCatType = 'type'; // New column for Need/Want
 
   // EMIs Table
   static const String emisTable = 'emis';
@@ -35,6 +36,21 @@ class DatabaseHelper {
   static const String colTenureRemainingMonths = 'tenure_remaining_months';
   static const String colNextDueDate = 'next_due_date'; // Unix Timestamp
 
+  // Budgets Table
+  static const String budgetsTable = 'budgets';
+  static const String colBudgetId = 'id';
+  static const String colBudgetCategory = 'category_name';
+  static const String colBudgetAmount = 'amount';
+  static const String colBudgetMonthYear = 'month_year';
+
+  // Assets Table
+  static const String assetsTable = 'assets';
+  static const String colAssetId = 'id';
+  static const String colAssetName = 'name';
+  static const String colAssetValue = 'value';
+  static const String colAssetYearlyAppreciation =
+      'yearly_appreciation'; // New column
+  static const String colAssetIcon = 'icon';
   // Singleton pattern
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -74,7 +90,8 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE $categoriesTable (
         $colCatId INTEGER PRIMARY KEY AUTOINCREMENT,
-        $colCatName TEXT NOT NULL UNIQUE
+        $colCatName TEXT NOT NULL UNIQUE,
+        $colCatType TEXT NOT NULL DEFAULT 'Want'
       )
     ''');
 
@@ -94,21 +111,105 @@ class DatabaseHelper {
 
     // Insert default categories
     await _insertDefaultCategories(db);
+
+    // Create Budgets Table
+    await _createBudgetsTable(db);
+
+    // Create Assets Table
+    await _createAssetsTable(db);
+  }
+
+  Future<void> _createBudgetsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $budgetsTable (
+        $colBudgetId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colBudgetCategory TEXT NOT NULL,
+        $colBudgetAmount REAL NOT NULL,
+        $colBudgetMonthYear TEXT NOT NULL,
+        UNIQUE($colBudgetCategory, $colBudgetMonthYear)
+      )
+    ''');
+  }
+
+  Future<void> _createAssetsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $assetsTable (
+        $colAssetId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colAssetName TEXT NOT NULL,
+        $colAssetValue REAL NOT NULL,
+        $colAssetYearlyAppreciation REAL,
+        $colAssetIcon TEXT
+      )
+    ''');
   }
 
   Future<void> _insertDefaultCategories(Database db) async {
-    List<String> defaultCategories = [
-      'Food',
-      'Transport',
-      'Utilities',
-      'Rent',
-      'Shopping',
-      'Health',
-      'Entertainment',
-      'Other'
+    List<String> expenseCategories = [
+      // Housing & Utilities
+      "Mortgage or rent",
+      "Phone Number",
+      "Electricity",
+      "Gas",
+      "Water and sewer",
+      "Cable",
+      "Medicine",
+      "Maintenance or repairs house 1",
+      "Maintenance or repairs house 2",
+      "Other Extra Maintenance house 2",
+
+      // Food & Groceries
+      "Rashan",
+      "Vegetables",
+      "Milk / Buttermilk",
+      "Fruits",
+      "Fast food",
+      "Bread and others",
+
+      // Transport & Commute
+      "Rapido",
+      "Metro",
+      "Train Pass",
+      "Dad Ticket",
+
+      // Loans & Credit
+      "Axis Bank Encash",
+      "SBI Encash",
+      "SBI Credit Card",
+      "ICICI Credit Card 1",
+      "ICICI Credit Card 2",
+      "SBI Top-Up Loan",
+
+      // Personal & Miscellaneous
+      "Haircut and shaving",
+      "Ticket",
+      "Given to others",
+      "Others",
+      "Amazon Prime (Subscription)",
+      "Medicine (duration tracking section)",
+      "Dr Visit",
+
+      // Money Transfers / Gifts
+      "Annu Kaka",
+      "Jathi Bua",
+      "Banva to Seva Ram Guchiya",
+      "Tarachand Ji for home inauguration",
+      "Gudiya Mama, Suresh, Kailash Mama",
+      "Murli Maraj",
+      "Sanjju",
+
+      // Household Purchases
+      "Gehu",
+      "Gehu pisai",
+
+      // Small Items / Daily Essentials
+      "Biscuit",
+      "Chips",
+      "Shampoo",
+      "Lice comb",
     ];
-    for (String category in defaultCategories) {
-      await db.insert(categoriesTable, {colCatName: category});
+    for (String category in expenseCategories) {
+      await db.insert(categoriesTable, {colCatName: category},
+          conflictAlgorithm: ConflictAlgorithm.ignore);
     }
   }
 }

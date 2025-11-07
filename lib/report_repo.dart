@@ -4,13 +4,16 @@ import 'package:offline_expense_tracker/db_helper.dart';
 class ReportRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
-  // Get total spending for current month
-  Future<double> getTotalForMonth(String monthYear) async {
+  // Get total spending for a given date range
+  Future<double> getTotalForDateRange(DateTime start, DateTime end) async {
     final db = await _dbHelper.database;
+    // Ensure the end of the day is included in the query
+    final endOfDay = DateTime(end.year, end.month, end.day, 23, 59, 59);
     final result = await db.rawQuery(
-      'SELECT SUM(${DatabaseHelper.colAmount}) as total FROM ${DatabaseHelper.expensesTable} WHERE ${DatabaseHelper.colMonthYear} = ?',
-      [monthYear],
+      'SELECT SUM(${DatabaseHelper.colAmount}) as total FROM ${DatabaseHelper.expensesTable} WHERE ${DatabaseHelper.colDate} >= ? AND ${DatabaseHelper.colDate} <= ?',
+      [start.millisecondsSinceEpoch, endOfDay.millisecondsSinceEpoch],
     );
+
     if (result.isNotEmpty && result.first['total'] != null) {
       return (result.first['total'] as num).toDouble();
     }
@@ -25,24 +28,32 @@ class ReportRepository {
 
     for (int i = 5; i >= 0; i--) {
       final date = DateTime(now.year, now.month - i, 1);
+      final endOfMonth = DateTime(now.year, now.month - i + 1, 0);
       final monthYear = AppFormatters.formatMonthYear(date);
-      final total = await getTotalForMonth(monthYear);
+      final total = await getTotalForDateRange(date, endOfMonth);
       monthlyTotals[monthYear] = total;
     }
     return monthlyTotals;
   }
 
-  // Get category breakdown for a specific month
-  Future<Map<String, double>> getCategoryBreakdown(String monthYear) async {
+  // Get category breakdown for a specific date range
+  Future<Map<String, double>> getCategoryBreakdown(
+      DateTime start, DateTime end) async {
     final db = await _dbHelper.database;
+    // Ensure the end of the day is included in the query
+    final endOfDay = DateTime(end.year, end.month, end.day, 23, 59, 59);
     final List<Map<String, dynamic>> maps = await db.query(
       DatabaseHelper.expensesTable,
       columns: [
         DatabaseHelper.colCategory,
         'SUM(${DatabaseHelper.colAmount}) as total',
       ],
-      where: '${DatabaseHelper.colMonthYear} = ?',
-      whereArgs: [monthYear],
+      where:
+          '${DatabaseHelper.colDate} >= ? AND ${DatabaseHelper.colDate} <= ?',
+      whereArgs: [
+        start.millisecondsSinceEpoch,
+        endOfDay.millisecondsSinceEpoch
+      ],
       groupBy: DatabaseHelper.colCategory,
     );
 
@@ -52,22 +63,25 @@ class ReportRepository {
     };
   }
 
-  // Get weekly spending trend for a specific month
-  Future<Map<int, double>> getWeeklySpending(String monthYear) async {
+  // Get daily spending trend for a specific date range
+  Future<Map<DateTime, double>> getDailySpending(
+      DateTime start, DateTime end) async {
     final db = await _dbHelper.database;
-    // 'unixepoch' works with the integer timestamp
+    final endOfDay = DateTime(end.year, end.month, end.day, 23, 59, 59);
+
     final List<Map<String, dynamic>> maps = await db.rawQuery(
-      "SELECT strftime('%W', ${DatabaseHelper.colDate} / 1000, 'unixepoch') as week, SUM(${DatabaseHelper.colAmount}) as total "
+      "SELECT date(${DatabaseHelper.colDate} / 1000, 'unixepoch') as expense_date, SUM(${DatabaseHelper.colAmount}) as total "
       "FROM ${DatabaseHelper.expensesTable} "
-      "WHERE ${DatabaseHelper.colMonthYear} = ? "
-      "GROUP BY week "
-      "ORDER BY week",
-      [monthYear],
+      "WHERE ${DatabaseHelper.colDate} >= ? AND ${DatabaseHelper.colDate} <= ? "
+      "GROUP BY expense_date "
+      "ORDER BY expense_date",
+      [start.millisecondsSinceEpoch, endOfDay.millisecondsSinceEpoch],
     );
 
     return {
       for (var map in maps)
-        int.parse(map['week'] as String): (map['total'] as num).toDouble(),
+        DateTime.parse(map['expense_date'] as String):
+            (map['total'] as num).toDouble(),
     };
   }
 }

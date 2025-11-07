@@ -10,8 +10,10 @@ final _emiRepo = Provider((ref) => EmiRepository());
 
 // Provider for Current Month's Total Spending
 final currentMonthSpendingProvider = FutureProvider<double>((ref) async {
-  final monthYear = AppFormatters.formatMonthYear(DateTime.now());
-  return ref.watch(_reportRepo).getTotalForMonth(monthYear);
+  final now = DateTime.now();
+  final startOfMonth = DateTime(now.year, now.month, 1);
+  final endOfMonth = DateTime(now.year, now.month + 1, 0);
+  return ref.watch(_reportRepo).getTotalForDateRange(startOfMonth, endOfMonth);
 });
 
 // Provider for Upcoming EMIs Due This Week (Count)

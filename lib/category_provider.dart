@@ -5,13 +5,50 @@ import 'package:offline_expense_tracker/expense_tracker_model.dart';
 
 // Provides the repository instance
 final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
-  return ExpenseRepository();
+  return ExpenseRepository(); // Assuming ExpenseRepository is defined in expense_repo.dart
 });
 
 // Provides the list of all categories
-final categoryListProvider = FutureProvider<List<Category>>((ref) async {
-  return ref.watch(expenseRepositoryProvider).getAllCategories();
+final categoryListProvider =
+    StateNotifierProvider<CategoryListNotifier, AsyncValue<List<Category>>>(
+        (ref) {
+  return CategoryListNotifier(ref);
 });
+
+class CategoryListNotifier extends StateNotifier<AsyncValue<List<Category>>> {
+  final Ref _ref;
+  late final ExpenseRepository _repository;
+
+  CategoryListNotifier(this._ref) : super(const AsyncValue.loading()) {
+    _repository = _ref.read(expenseRepositoryProvider);
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    state = const AsyncValue.loading();
+    try {
+      final categories = await _repository.getAllCategories();
+      state = AsyncValue.data(categories);
+    } catch (e, s) {
+      state = AsyncValue.error(e, s);
+    }
+  }
+
+  Future<void> addCategory(Category category) async {
+    await _repository.addCategory(category);
+    await _fetchCategories();
+  }
+
+  Future<void> updateCategory(Category category) async {
+    await _repository.updateCategory(category);
+    await _fetchCategories();
+  }
+
+  Future<void> deleteCategory(int id) async {
+    await _repository.deleteCategory(id);
+    await _fetchCategories();
+  }
+}
 
 // Provides the list of all expenses
 final expenseListProvider =

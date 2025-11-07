@@ -44,6 +44,7 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final currency = prefs.getString('currency') ?? 'USD';
   final themeModeString = prefs.getString('themeMode');
+  final userName = prefs.getString('userName') ?? 'User';
   ThemeMode themeMode;
   if (themeModeString == 'light') {
     themeMode = ThemeMode.light;
@@ -59,6 +60,7 @@ void main() async {
         sharedPreferencesProvider.overrideWithValue(prefs),
         currencyProvider.overrideWith((ref) => currency),
         themeProvider.overrideWith((ref) => themeMode),
+        userNameProvider.overrideWith((ref) => userName),
       ],
       child: const MyApp(),
     ),
@@ -84,7 +86,7 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
     return MaterialApp(
-      title: 'Offline Expense Tracker',
+      title: 'Personal Finance',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode, // Or ThemeMode.light / ThemeMode.dark

@@ -48,7 +48,29 @@ class ExpenseRepository {
   // Add Category
   Future<int> addCategory(Category category) async {
     final db = await _dbHelper.database;
-    return await db.insert(DatabaseHelper.categoriesTable, category.toMap());
+    return await db.insert(DatabaseHelper.categoriesTable, category.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+  }
+
+  // Update Category
+  Future<int> updateCategory(Category category) async {
+    final db = await _dbHelper.database;
+    return await db.update(
+      DatabaseHelper.categoriesTable,
+      category.toMap(),
+      where: '${DatabaseHelper.colCatId} = ?',
+      whereArgs: [category.id],
+    );
+  }
+
+  // Delete Category
+  Future<int> deleteCategory(int id) async {
+    final db = await _dbHelper.database;
+    return await db.delete(
+      DatabaseHelper.categoriesTable,
+      where: '${DatabaseHelper.colCatId} = ?',
+      whereArgs: [id],
+    );
   }
 
   // Get All Categories

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:offline_expense_tracker/emi_list_sccreen.dart';
 import 'package:offline_expense_tracker/expense_list.dart';
-import 'package:offline_expense_tracker/report_screen.dart';
+import 'package:offline_expense_tracker/manage_assets_screen.dart';
 
 import 'dashboard_screen.dart';
 
@@ -17,9 +17,9 @@ class _MainNavigationState extends State<MainNavigation> {
 
   static const List<Widget> _widgetOptions = <Widget>[
     DashboardScreen(),
-    ReportingScreen(),
     ExpenseListScreen(),
     EmiListScreen(),
+    ManageAssetsScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -42,11 +42,6 @@ class _MainNavigationState extends State<MainNavigation> {
             label: 'Dashboard',
           ),
           NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
-            selectedIcon: Icon(Icons.analytics),
-            label: 'Reports',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long),
             label: 'Expenses',
@@ -55,6 +50,11 @@ class _MainNavigationState extends State<MainNavigation> {
             icon: Icon(Icons.account_balance_wallet_outlined),
             selectedIcon: Icon(Icons.account_balance_wallet),
             label: 'EMIs',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_outlined),
+            selectedIcon: Icon(Icons.account_balance),
+            label: 'Assets',
           ),
         ],
       ),

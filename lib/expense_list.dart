@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offline_expense_tracker/add_expense.dart';
 import 'package:offline_expense_tracker/app_formater.dart';
 import 'package:offline_expense_tracker/category_provider.dart';
+import 'package:offline_expense_tracker/shared_preferences_provider.dart';
 
 class ExpenseListScreen extends ConsumerWidget {
   const ExpenseListScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final currency = ref.watch(currencyProvider);
     final expensesAsyncValue = ref.watch(expenseListProvider);
 
     return Scaffold(
@@ -32,7 +34,7 @@ class ExpenseListScreen extends ConsumerWidget {
                 child: ListTile(
                   leading: CircleAvatar(child: Text(expense.category[0])),
                   title: Text(
-                    AppFormatters.formatCurrency(expense.amount, 'INR'),
+                    AppFormatters.formatCurrency(expense.amount, currency),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(

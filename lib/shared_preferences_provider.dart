@@ -10,3 +10,5 @@ final currencyProvider = StateProvider<String>((ref) => 'USD');
 
 final themeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
+// Provider for User Name
+final userNameProvider = StateProvider<String>((ref) => 'User');

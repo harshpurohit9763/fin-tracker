@@ -7,10 +7,22 @@ import 'package:offline_expense_tracker/report_provider.dart';
 class CategoryPieChartWidget extends ConsumerWidget {
   const CategoryPieChartWidget({super.key});
 
+  // A list of vibrant, high-contrast colors for the chart
+  static const List<Color> _chartColors = [
+    Colors.blue,
+    Colors.yellow,
+    Colors.green,
+    Colors.orange,
+    Colors.purple,
+    Colors.red,
+    Colors.teal,
+    Colors.pink,
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final breakdownAsync = ref.watch(categoryBreakdownProvider);
-    final totalAsync = ref.watch(selectedMonthTotalProvider);
+    final totalAsync = ref.watch(selectedRangeTotalProvider);
 
     return breakdownAsync.when(
       data: (data) {
@@ -25,8 +37,8 @@ class CategoryPieChartWidget extends ConsumerWidget {
         final List<PieChartSectionData> sections = data.entries.map((entry) {
           final percentage = total > 0 ? (entry.value / total) * 100 : 0;
           return PieChartSectionData(
-            color: Colors.primaries[data.keys.toList().indexOf(entry.key) %
-                Colors.primaries.length],
+            color: _chartColors[
+                data.keys.toList().indexOf(entry.key) % _chartColors.length],
             value: entry.value,
             title: '${percentage.toStringAsFixed(1)}%',
             radius: 100,
@@ -57,9 +69,8 @@ class CategoryPieChartWidget extends ConsumerWidget {
               children: data.keys.map((key) {
                 return Chip(
                   avatar: CircleAvatar(
-                    backgroundColor: Colors.primaries[
-                        data.keys.toList().indexOf(key) %
-                            Colors.primaries.length],
+                    backgroundColor: _chartColors[
+                        data.keys.toList().indexOf(key) % _chartColors.length],
                   ),
                   label: Text(
                     '$key: ${AppFormatters.formatCurrency(data[key]!, 'INR')}',

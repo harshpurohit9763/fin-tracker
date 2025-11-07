@@ -32,8 +32,11 @@ class EmiListScreen extends ConsumerWidget {
               final isPaidOff = emi.tenureRemainingMonths <= 0;
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: isPaidOff
-                    ? Colors.green.withOpacity(0.1)
+                color: isPaidOff // Use a subtle color from the theme
+                    ? Theme.of(context)
+                        .colorScheme
+                        .primaryContainer
+                        .withOpacity(0.3)
                     : Theme.of(context).cardColor,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -77,9 +80,14 @@ class EmiListScreen extends ConsumerWidget {
                                       ? 'PAID OFF'
                                       : 'Next Due: ${AppFormatters.formatDate(emi.nextDueDate)}',
                                   style: TextStyle(
-                                    color: isPaidOff
-                                        ? Colors.green
-                                        : Theme.of(context).colorScheme.primary,
+                                    color:
+                                        isPaidOff // Use a more vibrant, theme-based color
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
