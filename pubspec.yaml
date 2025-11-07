@@ -35,6 +35,8 @@ dependencies:
   month_picker_dialog: ^6.6.0
   shared_preferences: ^2.2.3
   workmanager: ^0.9.0+3
+  pdf: ^3.11.3
+  printing: ^5.14.2
 
 dev_dependencies:
   flutter_test:

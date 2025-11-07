@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:offline_expense_tracker/app_formater.dart';
 import 'package:offline_expense_tracker/report_repo.dart';
 
+import 'category_provider.dart';
+
 // Provides the repository instance
 final reportRepositoryProvider = Provider<ReportRepository>((ref) {
   return ReportRepository();
@@ -62,4 +64,19 @@ final currentDateRangeProvider = Provider<DateTimeRange>((ref) {
       final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
       return DateTimeRange(start: firstDayOfMonth, end: lastDayOfMonth);
   }
+});
+
+// A provider that returns a filtered list of expenses based on the current date range
+final filteredExpensesProvider = FutureProvider.autoDispose((ref) async {
+  final allExpensesAsync = ref.watch(expenseListProvider);
+  final range = ref.watch(currentDateRangeProvider);
+
+  return allExpensesAsync.when(
+    data: (allExpenses) => allExpenses.where((expense) {
+      return !expense.date.isBefore(range.start) &&
+          !expense.date.isAfter(range.end.add(const Duration(days: 1)));
+    }).toList(),
+    loading: () => [], // Return an empty list while loading
+    error: (e, s) => throw e, // Propagate the error
+  );
 });
