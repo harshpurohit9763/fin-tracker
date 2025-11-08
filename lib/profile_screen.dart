@@ -1,3 +1,5 @@
+import 'package:personal_finance/emi_provider.dart';
+import 'package:personal_finance/notification_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/manage_categories_screen.dart';
@@ -165,6 +167,62 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               );
             },
           ),
+          // ListTile(
+          //   title: const Text('Send Test EMI Notification'),
+          //   leading: const Icon(Icons.notification_add),
+          //   trailing: const Icon(Icons.chevron_right),
+          //   onTap: () {
+          //     final emisAsyncValue = ref.read(emiListProvider);
+          //     emisAsyncValue.when(
+          //       data: (emis) {
+          //         if (emis.isNotEmpty) {
+          //           final upcomingEmis = emis
+          //               .where((emi) => emi.nextDueDate.isAfter(DateTime.now()))
+          //               .toList();
+          //           if (upcomingEmis.isNotEmpty) {
+          //             upcomingEmis.sort((a, b) =>
+          //                 a.nextDueDate.compareTo(b.nextDueDate));
+          //             final nextEmi = upcomingEmis.first;
+          //             final daysLeft =
+          //                 nextEmi.nextDueDate.difference(DateTime.now()).inDays;
+          //             NotificationService().showEmiReminder(
+          //               id: nextEmi.id!,
+          //               loanName: nextEmi.loanName,
+          //               amount: nextEmi.monthlyEmiAmount,
+          //               daysLeft: daysLeft,
+          //             );
+          //           } else {
+          //             ScaffoldMessenger.of(context).showSnackBar(
+          //               const SnackBar(
+          //                 content: Text(
+          //                     'No upcoming EMIs to send a notification for.'),
+          //               ),
+          //             );
+          //           }
+          //         } else {
+          //           ScaffoldMessenger.of(context).showSnackBar(
+          //             const SnackBar(
+          //               content:
+          //                   Text('No EMIs to send a notification for.'),
+          //             ),
+          //           );
+          //         }
+          //       },
+          //       loading: () =>
+          //           ScaffoldMessenger.of(context).showSnackBar(
+          //         const SnackBar(
+          //           content: Text('Loading EMIs...'),
+          //         ),
+          //       ),
+          //       error: (error, stackTrace) =>
+          //           ScaffoldMessenger.of(context).showSnackBar(
+          //         SnackBar(
+          //           content: Text('Error loading EMIs: $error'),
+          //         ),
+          //       ),
+          //     );
+          //   },
+          // ),
         ],
       ),
     );

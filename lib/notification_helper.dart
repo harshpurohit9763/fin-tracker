@@ -83,6 +83,42 @@ class NotificationService {
     );
   }
 
+  Future<void> showBigPictureNotification({
+    required int id,
+    required String loanName,
+    required double amount,
+    required String imagePath,
+  }) async {
+    // Style information for showing a big picture.
+    final BigPictureStyleInformation bigPictureStyleInformation =
+        BigPictureStyleInformation(
+      FilePathAndroidBitmap(imagePath),
+      // The content title when the notification is expanded.
+      contentTitle: 'EMI Reminder: $loanName',
+      // The summary text when the notification is expanded.
+      summaryText: 'Your EMI of $amount is due soon.',
+      // Hide the icon when the notification is expanded
+      hideExpandedLargeIcon: true,
+    );
+
+    final AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'big_picture_emi_reminders', // Channel ID
+      'Big Picture EMI Reminders', // Channel Name
+      channelDescription:
+          'Channel for showing EMI reminders with a card image.',
+      styleInformation: bigPictureStyleInformation,
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    final NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin.show(
+        id, 'EMI Reminder', 'Due for $loanName', platformChannelSpecifics);
+  }
+
   Future<void> cancelNotification(int id) async {
     await flutterLocalNotificationsPlugin.cancel(id);
   }
