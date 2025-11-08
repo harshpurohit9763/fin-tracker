@@ -24,8 +24,6 @@ class NetWorthScreen extends ConsumerWidget {
           _AssetsCard(),
           SizedBox(height: 24),
           _LiabilitiesCard(),
-          SizedBox(height: 24),
-          _HistoryChartCard(),
         ],
       ),
     );
@@ -213,19 +211,4 @@ class _LiabilitiesCard extends ConsumerWidget {
   }
 }
 
-/// A card showing the net worth history chart (placeholder).
-class _HistoryChartCard extends ConsumerWidget {
-  const _HistoryChartCard();
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      child: Container(
-        height: 200,
-        padding: const EdgeInsets.all(16.0),
-        alignment: Alignment.center,
-        child: const Text('Net Worth History Chart Placeholder'),
-      ),
-    );
-  }
-}

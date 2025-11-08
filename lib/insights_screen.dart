@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/app_formater.dart';
 import 'package:personal_finance/shared_preferences_provider.dart';
 import 'package:personal_finance/insights_provider.dart';
+import 'package:personal_finance/cash_flow_chart.dart'; // Import the new cash flow chart
 
 import 'manage_subscriptions_screen.dart';
 import 'subscription_provider.dart';
@@ -223,18 +224,75 @@ class _SubscriptionTrackerCard extends ConsumerWidget {
 }
 
 /// Card for projecting cash flow.
-class _CashFlowProjectionCard extends StatelessWidget {
+class _CashFlowProjectionCard extends ConsumerWidget {
   const _CashFlowProjectionCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cashFlowAsync = ref.watch(cashFlowDataProvider);
+
     return Card(
-      child: Container(
-        height: 200,
+      child: Padding(
         padding: const EdgeInsets.all(16.0),
-        alignment: Alignment.center,
-        child: const Text('Cash Flow Forecast Chart Placeholder'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Cash Flow', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            cashFlowAsync.when(
+              data: (data) {
+                if (data.isEmpty) {
+                  return const SizedBox(
+                    height: 200,
+                    child: Center(
+                        child: Text(
+                            'Not enough data to display cash flow chart (min 2 months).')),
+                  );
+                }
+                return CashFlowChart(cashFlowData: data);
+              },
+              loading: () => const SizedBox(
+                height: 200,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (e, s) => SizedBox(
+                height: 200,
+                child: Center(child: Text('Error loading cash flow data: $e')),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Legend for the chart
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _ChartLegendItem(color: Colors.green, text: 'Income'),
+                SizedBox(width: 16),
+                _ChartLegendItem(color: Colors.red, text: 'Expenses'),
+                SizedBox(width: 16),
+                _ChartLegendItem(color: Colors.blue, text: 'Net Flow'),
+              ],
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _ChartLegendItem extends StatelessWidget {
+  final Color color;
+  final String text;
+
+  const _ChartLegendItem({required this.color, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(Icons.circle, color: color, size: 12),
+        const SizedBox(width: 4),
+        Text(text, style: Theme.of(context).textTheme.bodySmall),
+      ],
     );
   }
 }

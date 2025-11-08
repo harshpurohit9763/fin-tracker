@@ -3,6 +3,22 @@ import 'package:personal_finance/db_helper.dart';
 import 'package:personal_finance/income_model.dart';
 import 'package:personal_finance/expense_model.dart'; // Import Expense model
 
+class CashFlowData {
+  final int month;
+  final int year;
+  final double income;
+  final double expenses;
+
+  CashFlowData({
+    required this.month,
+    required this.year,
+    required this.income,
+    required this.expenses,
+  });
+
+  double get netFlow => income - expenses;
+}
+
 class ReportRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
@@ -160,5 +176,29 @@ class ReportRepository {
         DateTime.parse(map['expense_date'] as String):
             (map['total'] as num).toDouble(),
     };
+  }
+
+  Future<List<CashFlowData>> getMonthlyCashFlow(
+      DateTime start, DateTime end) async {
+    List<CashFlowData> cashFlows = [];
+    DateTime currentMonth = DateTime(start.year, start.month, 1);
+
+    while (currentMonth.isBefore(end) ||
+        currentMonth.isAtSameMomentAs(DateTime(end.year, end.month, 1))) {
+      final endOfMonth = DateTime(currentMonth.year, currentMonth.month + 1, 0);
+
+      final income = await getTotalIncomeForDateRange(currentMonth, endOfMonth);
+      final expenses = await getTotalForDateRange(currentMonth, endOfMonth);
+
+      cashFlows.add(CashFlowData(
+        month: currentMonth.month,
+        year: currentMonth.year,
+        income: income,
+        expenses: expenses,
+      ));
+
+      currentMonth = DateTime(currentMonth.year, currentMonth.month + 1, 1);
+    }
+    return cashFlows;
   }
 }

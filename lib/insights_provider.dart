@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/category_model.dart';
 import 'package:personal_finance/category_provider.dart';
 import 'package:personal_finance/report_provider.dart';
+import 'package:personal_finance/report_repo.dart'; // Import ReportRepository and CashFlowData
 
 class SpendingBreakdown {
   final double needs;
@@ -62,4 +63,24 @@ final spendingBreakdownProvider =
         SpendingBreakdown(), // Return an empty breakdown while loading
     error: (e, s) => throw e, // Propagate the error
   );
+});
+
+final cashFlowDataProvider =
+    FutureProvider.autoDispose<List<CashFlowData>>((ref) async {
+  final repository = ref.watch(reportRepositoryProvider);
+  final now = DateTime.now();
+
+  // Fetch data for the last 12 months to ensure enough data for at least 2 months
+  final twelveMonthsAgo = DateTime(now.year, now.month - 11, 1);
+  final cashFlows = await repository.getMonthlyCashFlow(twelveMonthsAgo, now);
+
+  // Filter out months with no data and ensure at least 2 months of data
+  final filteredCashFlows =
+      cashFlows.where((data) => data.income > 0 || data.expenses > 0).toList();
+
+  if (filteredCashFlows.length < 2) {
+    return []; // Not enough data to display the chart
+  }
+
+  return filteredCashFlows;
 });
