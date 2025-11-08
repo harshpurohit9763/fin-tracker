@@ -14,6 +14,7 @@ import 'package:personal_finance/monthly_trend.dart';
 import 'package:personal_finance/overlapping_card_view.dart';
 import 'package:personal_finance/flippable_emi_card.dart';
 import 'package:personal_finance/shared_preferences_provider.dart';
+import 'package:personal_finance/tutorial_overlay.dart';
 import 'package:personal_finance/upcomming_emi.dart';
 import 'package:personal_finance/upcoming_emi_card.dart';
 import 'package:personal_finance/profile_screen.dart';
@@ -29,11 +30,70 @@ String _getGreeting() {
   return 'Good evening';
 }
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  // Keys for tutorial
+  final GlobalKey _profileButtonKey = GlobalKey();
+  final GlobalKey _metricsCardKey = GlobalKey();
+  final GlobalKey _monthlyTrendKey = GlobalKey();
+  final GlobalKey _toolsGridKey = GlobalKey();
+  final GlobalKey _fabKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showTutorial();
+    });
+  }
+
+  Future<void> _showTutorial() async {
+    final tutorialProvider = ref.read(tutorialVisibilityProvider);
+    final isSeen = await tutorialProvider.isTutorialSeen('dashboard');
+    if (!isSeen && mounted) {
+      final steps = [
+        TutorialStep(
+          key: _profileButtonKey,
+          text:
+              'Welcome! Tap here to manage your profile, settings, and categories.',
+          shape: const CircleBorder(),
+        ),
+        TutorialStep(
+          key: _metricsCardKey,
+          text:
+              'These cards show a quick summary of your spending and upcoming EMIs for the current period.',
+        ),
+        TutorialStep(
+          key: _monthlyTrendKey,
+          text:
+              'This chart visualizes your spending habits over the last 6 months.',
+        ),
+        TutorialStep(
+          key: _toolsGridKey,
+          text:
+              'Explore powerful tools like Budgets, Insights, and Net Worth tracking here.',
+        ),
+        TutorialStep(
+          key: _fabKey,
+          text: 'Tap this button anytime to quickly add a new expense.',
+          shape: const CircleBorder(),
+        ),
+      ];
+
+      await TutorialOverlay.show(context, steps, () {
+        tutorialProvider.setTutorialSeen('dashboard');
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final currency = ref.watch(currencyProvider);
     final userName = ref.watch(userNameProvider);
     // Watch providers for the metric cards
@@ -63,8 +123,13 @@ class DashboardScreen extends ConsumerWidget {
             nextEmiAsync.when(
               data: (allEmis) {
                 // Only show unpaid EMIs
-                final emis =
-                    allEmis.where((e) => e.tenureRemainingMonths > 0).toList();
+                final now = DateTime.now();
+                final endOfWeek = now.add(Duration(days: 7 - now.weekday));
+                final emis = allEmis
+                    .where((e) =>
+                        e.tenureRemainingMonths > 0 &&
+                        e.nextDueDate.isBefore(endOfWeek))
+                    .toList();
                 final hasEmi = emis.isNotEmpty;
                 void navigateToProfile() {
                   Navigator.push(
@@ -122,6 +187,7 @@ class DashboardScreen extends ConsumerWidget {
                       ? [] // No actions when EMI card is shown
                       : [
                           IconButton(
+                            key: _profileButtonKey,
                             icon: const CircleAvatar(child: Icon(Icons.person)),
                             onPressed: navigateToProfile,
                           ),
@@ -138,20 +204,71 @@ class DashboardScreen extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   // Key Metrics Cards
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      bool isWide = constraints.maxWidth > 600;
-                      if (isWide) {
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: totalSpendingAsync.when(
+                  KeyedSubtree(
+                    key: _metricsCardKey,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        bool isWide = constraints.maxWidth > 600;
+                        if (isWide) {
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: totalSpendingAsync.when(
+                                  data: (total) => MetricCard(
+                                    title: "This Month's Spending",
+                                    value: AppFormatters.formatCurrency(
+                                      total,
+                                      currency,
+                                    ),
+                                    icon: Icons.show_chart,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                  loading: () => const MetricCard(
+                                      title: "This Month's Spending",
+                                      value: '...',
+                                      icon: Icons.show_chart,
+                                      color: Colors.grey),
+                                  error: (e, s) => const MetricCard(
+                                      title: "This Month's Spending",
+                                      value: 'Error',
+                                      icon: Icons.error,
+                                      color: Colors.redAccent),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: upcomingEmisAsync.when(
+                                  data: (count) => MetricCard(
+                                    title: 'EMIs Due This Week',
+                                    value: '$count Payments',
+                                    icon: Icons.payment,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .secondary,
+                                  ),
+                                  loading: () => const MetricCard(
+                                      title: 'EMIs Due This Week',
+                                      value: '...',
+                                      icon: Icons.payment,
+                                      color: Colors.grey),
+                                  error: (e, s) => const MetricCard(
+                                      title: 'EMIs Due This Week',
+                                      value: 'Error',
+                                      icon: Icons.error,
+                                      color: Colors.redAccent),
+                                ),
+                              ),
+                            ],
+                          );
+                        } else {
+                          return Column(
+                            children: [
+                              totalSpendingAsync.when(
                                 data: (total) => MetricCard(
                                   title: "This Month's Spending",
                                   value: AppFormatters.formatCurrency(
-                                    total,
-                                    currency,
-                                  ),
+                                      total, currency),
                                   icon: Icons.show_chart,
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
@@ -166,10 +283,8 @@ class DashboardScreen extends ConsumerWidget {
                                     icon: Icons.error,
                                     color: Colors.redAccent),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: upcomingEmisAsync.when(
+                              const SizedBox(height: 16),
+                              upcomingEmisAsync.when(
                                 data: (count) => MetricCard(
                                   title: 'EMIs Due This Week',
                                   value: '$count Payments',
@@ -188,54 +303,11 @@ class DashboardScreen extends ConsumerWidget {
                                     icon: Icons.error,
                                     color: Colors.redAccent),
                               ),
-                            ),
-                          ],
-                        );
-                      } else {
-                        return Column(
-                          children: [
-                            totalSpendingAsync.when(
-                              data: (total) => MetricCard(
-                                title: "This Month's Spending",
-                                value: AppFormatters.formatCurrency(
-                                    total, currency),
-                                icon: Icons.show_chart,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                              loading: () => const MetricCard(
-                                  title: "This Month's Spending",
-                                  value: '...',
-                                  icon: Icons.show_chart,
-                                  color: Colors.grey),
-                              error: (e, s) => const MetricCard(
-                                  title: "This Month's Spending",
-                                  value: 'Error',
-                                  icon: Icons.error,
-                                  color: Colors.redAccent),
-                            ),
-                            const SizedBox(height: 16),
-                            upcomingEmisAsync.when(
-                              data: (count) => MetricCard(
-                                title: 'EMIs Due This Week',
-                                value: '$count Payments',
-                                icon: Icons.payment,
-                                color: Theme.of(context).colorScheme.secondary,
-                              ),
-                              loading: () => const MetricCard(
-                                  title: 'EMIs Due This Week',
-                                  value: '...',
-                                  icon: Icons.payment,
-                                  color: Colors.grey),
-                              error: (e, s) => const MetricCard(
-                                  title: 'EMIs Due This Week',
-                                  value: 'Error',
-                                  icon: Icons.error,
-                                  color: Colors.redAccent),
-                            ),
-                          ],
-                        );
-                      }
-                    },
+                            ],
+                          );
+                        }
+                      },
+                    ),
                   ),
                   const SizedBox(height: 24),
 
@@ -243,7 +315,11 @@ class DashboardScreen extends ConsumerWidget {
                   Text('Monthly Spending Trend (Last 6 Months)',
                       style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 16),
-                  const SizedBox(height: 250, child: MonthlyTrendChart()),
+                  KeyedSubtree(
+                    key: _monthlyTrendKey,
+                    child:
+                        const SizedBox(height: 250, child: MonthlyTrendChart()),
+                  ),
                   const SizedBox(height: 24),
 
                   // EMI Due Panel
@@ -257,51 +333,54 @@ class DashboardScreen extends ConsumerWidget {
                   Text('Financial Tools',
                       style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 16),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.2,
-                    children: [
-                      _FeatureTile(
-                          title: 'Budgets',
-                          icon: Icons.track_changes_outlined,
-                          color: Colors.orange,
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const BudgetsScreen()))),
-                      _FeatureTile(
-                          title: 'Insights',
-                          icon: Icons.lightbulb_outline,
-                          color: Colors.blue,
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const InsightsScreen()))),
-                      _FeatureTile(
-                          title: 'Net Worth',
-                          icon: Icons.assessment_outlined,
-                          color: Colors.green,
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const NetWorthScreen()))),
-                      _FeatureTile(
-                          title: 'Reports',
-                          icon: Icons.analytics_outlined,
-                          color: Colors.purple,
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      const AdvancedReportsScreen()))),
-                    ],
+                  KeyedSubtree(
+                    key: _toolsGridKey,
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 1.2,
+                      children: [
+                        _FeatureTile(
+                            title: 'Budgets',
+                            icon: Icons.track_changes_outlined,
+                            color: Colors.orange,
+                            onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const BudgetsScreen()))),
+                        _FeatureTile(
+                            title: 'Insights',
+                            icon: Icons.lightbulb_outline,
+                            color: Colors.blue,
+                            onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const InsightsScreen()))),
+                        _FeatureTile(
+                            title: 'Net Worth',
+                            icon: Icons.assessment_outlined,
+                            color: Colors.green,
+                            onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const NetWorthScreen()))),
+                        _FeatureTile(
+                            title: 'Reports',
+                            icon: Icons.analytics_outlined,
+                            color: Colors.purple,
+                            onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const AdvancedReportsScreen()))),
+                      ],
+                    ),
                   ),
                 ]),
               ),
@@ -310,6 +389,7 @@ class DashboardScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        key: _fabKey,
         onPressed: () {
           Navigator.push(
             context,

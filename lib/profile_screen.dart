@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/manage_categories_screen.dart';
 import 'package:personal_finance/shared_preferences_provider.dart';
+import 'package:personal_finance/tutorial_overlay.dart';
+import 'package:personal_finance/data_backup_service.dart'; // Added import
+import 'package:personal_finance/db_helper.dart'; // Added import
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -15,6 +18,13 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late TextEditingController _nameController;
   bool _isNameChanged = false;
+
+  // Keys for tutorial
+  final GlobalKey _nameKey = GlobalKey();
+  final GlobalKey _currencyKey = GlobalKey();
+  final GlobalKey _appearanceKey = GlobalKey();
+  final GlobalKey _themeColorKey = GlobalKey();
+  final GlobalKey _categoriesKey = GlobalKey();
 
   @override
   void initState() {
@@ -29,6 +39,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         });
       }
     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showTutorial();
+    });
+  }
+
+  Future<void> _showTutorial() async {
+    final tutorialProvider = ref.read(tutorialVisibilityProvider);
+    final isSeen = await tutorialProvider.isTutorialSeen('profile');
+    if (!isSeen && mounted) {
+      final steps = [
+        TutorialStep(
+          key: _nameKey,
+          text: 'You can personalize the app by setting your name here.',
+        ),
+        TutorialStep(
+          key: _currencyKey,
+          text:
+              'Select your preferred currency. All financial data in the app will use this setting.',
+        ),
+        TutorialStep(
+          key: _appearanceKey,
+          text: 'Choose between light, dark, or system default theme.',
+        ),
+        TutorialStep(
+          key: _themeColorKey,
+          text: 'Customize the app\'s accent color to match your style.',
+        ),
+        TutorialStep(
+          key: _categoriesKey,
+          text:
+              'Manage your expense and income categories here. This is crucial for accurate tracking!',
+        ),
+      ];
+
+      await TutorialOverlay.show(context, steps, () {
+        tutorialProvider.setTutorialSeen('profile');
+      });
+    }
   }
 
   @override
@@ -72,11 +120,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Your Name',
-                  border: OutlineInputBorder(),
+              child: KeyedSubtree(
+                key: _nameKey,
+                child: TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Your Name',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
               ),
             ),
@@ -88,6 +139,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 8),
           Card(
+            key: _currencyKey,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Column(
@@ -115,6 +167,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 8),
           Card(
+            key: _appearanceKey,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Column(
@@ -148,6 +201,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 8),
           Card(
+            key: _themeColorKey,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: _ColorPicker(),
@@ -155,6 +209,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 24),
           ListTile(
+            key: _categoriesKey,
             title: const Text('Manage Categories'),
             leading: const Icon(Icons.category),
             trailing: const Icon(Icons.chevron_right),
@@ -167,62 +222,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               );
             },
           ),
-          // ListTile(
-          //   title: const Text('Send Test EMI Notification'),
-          //   leading: const Icon(Icons.notification_add),
-          //   trailing: const Icon(Icons.chevron_right),
-          //   onTap: () {
-          //     final emisAsyncValue = ref.read(emiListProvider);
-          //     emisAsyncValue.when(
-          //       data: (emis) {
-          //         if (emis.isNotEmpty) {
-          //           final upcomingEmis = emis
-          //               .where((emi) => emi.nextDueDate.isAfter(DateTime.now()))
-          //               .toList();
-          //           if (upcomingEmis.isNotEmpty) {
-          //             upcomingEmis.sort((a, b) =>
-          //                 a.nextDueDate.compareTo(b.nextDueDate));
-          //             final nextEmi = upcomingEmis.first;
-          //             final daysLeft =
-          //                 nextEmi.nextDueDate.difference(DateTime.now()).inDays;
-          //             NotificationService().showEmiReminder(
-          //               id: nextEmi.id!,
-          //               loanName: nextEmi.loanName,
-          //               amount: nextEmi.monthlyEmiAmount,
-          //               daysLeft: daysLeft,
-          //             );
-          //           } else {
-          //             ScaffoldMessenger.of(context).showSnackBar(
-          //               const SnackBar(
-          //                 content: Text(
-          //                     'No upcoming EMIs to send a notification for.'),
-          //               ),
-          //             );
-          //           }
-          //         } else {
-          //           ScaffoldMessenger.of(context).showSnackBar(
-          //             const SnackBar(
-          //               content:
-          //                   Text('No EMIs to send a notification for.'),
-          //             ),
-          //           );
-          //         }
-          //       },
-          //       loading: () =>
-          //           ScaffoldMessenger.of(context).showSnackBar(
-          //         const SnackBar(
-          //           content: Text('Loading EMIs...'),
-          //         ),
-          //       ),
-          //       error: (error, stackTrace) =>
-          //           ScaffoldMessenger.of(context).showSnackBar(
-          //         SnackBar(
-          //           content: Text('Error loading EMIs: $error'),
-          //         ),
-          //       ),
-          //     );
-          //   },
-          // ),
+          const SizedBox(height: 24),
+          ListTile(
+            title: const Text('Export Data'),
+            leading: const Icon(Icons.upload_file),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              final prefs = ref.read(sharedPreferencesProvider);
+              final database = await DatabaseHelper.instance.database;
+              final backupService = DataBackupService(prefs, database);
+              await backupService.exportData(context);
+            },
+          ),
+          ListTile(
+            title: const Text('Import Data'),
+            leading: const Icon(Icons.cloud_download_outlined),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              final prefs = ref.read(sharedPreferencesProvider);
+              final database = await DatabaseHelper.instance.database;
+              final backupService = DataBackupService(prefs, database);
+              await backupService.importData(context);
+            },
+          ),
         ],
       ),
     );

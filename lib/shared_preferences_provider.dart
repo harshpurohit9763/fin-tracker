@@ -18,3 +18,26 @@ final accentColorProvider = StateProvider<Color>((ref) {
   final colorValue = prefs.getInt('accentColor') ?? Colors.deepPurple.value;
   return Color(colorValue);
 });
+
+// Provider for managing tutorial visibility
+class TutorialVisibilityNotifier extends StateNotifier<Map<String, bool>> {
+  final SharedPreferences _prefs;
+
+  TutorialVisibilityNotifier(this._prefs) : super({});
+
+  static const String _tutorialKeyPrefix = 'tutorial_seen_';
+
+  Future<bool> isTutorialSeen(String screenId) async {
+    return _prefs.getBool('$_tutorialKeyPrefix$screenId') ?? false;
+  }
+
+  Future<void> setTutorialSeen(String screenId) async {
+    await _prefs.setBool('$_tutorialKeyPrefix$screenId', true);
+  }
+}
+
+final tutorialVisibilityProvider =
+    Provider((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return TutorialVisibilityNotifier(prefs);
+});
