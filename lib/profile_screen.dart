@@ -140,6 +140,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 24),
+          Text(
+            'Theme Color',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _ColorPicker(),
+            ),
+          ),
+          const SizedBox(height: 24),
           ListTile(
             title: const Text('Manage Categories'),
             leading: const Icon(Icons.category),
@@ -177,5 +189,53 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Name updated!')));
     }
+  }
+}
+
+class _ColorPicker extends ConsumerWidget {
+  final List<Color> _colorOptions = [
+    Colors.deepPurple,
+    Colors.blue,
+    Colors.teal,
+    Colors.green,
+    Colors.orange,
+    Colors.pink,
+    Colors.black,
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedColor = ref.watch(accentColorProvider);
+
+    return Wrap(
+      spacing: 16.0,
+      runSpacing: 16.0,
+      alignment: WrapAlignment.center,
+      children: _colorOptions.map((color) {
+        final isSelected = color.value == selectedColor.value;
+        return GestureDetector(
+          onTap: () async {
+            ref.read(accentColorProvider.notifier).state = color;
+            final prefs = ref.read(sharedPreferencesProvider);
+            await prefs.setInt('accentColor', color.value);
+          },
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                width: isSelected ? 3.0 : 1.0,
+              ),
+            ),
+            child: isSelected
+                ? const Icon(Icons.check, color: Colors.white)
+                : null,
+          ),
+        );
+      }).toList(),
+    );
   }
 }

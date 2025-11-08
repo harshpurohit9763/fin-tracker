@@ -6,7 +6,6 @@ import 'package:personal_finance/db_helper.dart';
 import 'package:personal_finance/notification_helper.dart';
 import 'package:personal_finance/profile_screen.dart';
 import 'package:personal_finance/shared_preferences_provider.dart';
-import 'package:personal_finance/themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -46,6 +45,8 @@ void main() async {
   final currency = prefs.getString('currency') ?? 'USD';
   final themeModeString = prefs.getString('themeMode');
   final userName = prefs.getString('userName') ?? 'User';
+  final accentColorValue = prefs.getInt('accentColor');
+
   ThemeMode themeMode;
   if (themeModeString == 'light') {
     themeMode = ThemeMode.light;
@@ -62,6 +63,8 @@ void main() async {
         currencyProvider.overrideWith((ref) => currency),
         themeProvider.overrideWith((ref) => themeMode),
         userNameProvider.overrideWith((ref) => userName),
+        if (accentColorValue != null)
+          accentColorProvider.overrideWith((ref) => Color(accentColorValue)),
       ],
       child: const MyApp(),
     ),
@@ -86,11 +89,25 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
+    final accentColor = ref.watch(accentColorProvider);
+
     return MaterialApp(
       title: 'Personal Finance',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode, // Or ThemeMode.light / ThemeMode.dark
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: accentColor,
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: accentColor,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+      ),
+      themeMode: themeMode,
       debugShowCheckedModeBanner: false,
       home: const MainNavigation(),
     );

@@ -12,3 +12,9 @@ final themeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.system);
 
 // Provider for User Name
 final userNameProvider = StateProvider<String>((ref) => 'User');
+
+final accentColorProvider = StateProvider<Color>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  final colorValue = prefs.getInt('accentColor') ?? Colors.deepPurple.value;
+  return Color(colorValue);
+});
