@@ -40,6 +40,7 @@ void main() async {
 
   // Initialize timezone data
   await _initTimezone();
+  WidgetsFlutterBinding.ensureInitialized();
 
   final prefs = await SharedPreferences.getInstance();
   final currency = prefs.getString('currency') ?? 'USD';
