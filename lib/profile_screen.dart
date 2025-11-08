@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/manage_categories_screen.dart';
-import 'package:offline_expense_tracker/shared_preferences_provider.dart';
+import 'package:personal_finance/manage_categories_screen.dart';
+import 'package:personal_finance/shared_preferences_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -12,11 +12,27 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late TextEditingController _nameController;
+  bool _isNameChanged = false;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: ref.read(userNameProvider));
+    final initialName = ref.read(userNameProvider);
+    _nameController = TextEditingController(text: initialName);
+    _nameController.addListener(() {
+      final hasChanged = _nameController.text != initialName;
+      if (hasChanged != _isNameChanged) {
+        setState(() {
+          _isNameChanged = hasChanged;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 
   @override
@@ -31,6 +47,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile & Settings'),
+        actions: [
+          if (_isNameChanged)
+            TextButton(
+              onPressed: () {
+                _updateUserName(_nameController.text);
+                FocusScope.of(context).unfocus(); // Dismiss keyboard
+              },
+              child: const Text('SAVE'),
+            ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
@@ -49,13 +76,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   labelText: 'Your Name',
                   border: OutlineInputBorder(),
                 ),
-                onFieldSubmitted: (value) {
-                  _updateUserName(value);
-                },
-                onEditingComplete: () {
-                  // This is called when the user is done editing.
-                  _updateUserName(_nameController.text);
-                },
               ),
             ),
           ),
@@ -151,6 +171,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ref.read(userNameProvider.notifier).state = name;
       final prefs = ref.read(sharedPreferencesProvider);
       prefs.setString('userName', name);
+      setState(() {
+        _isNameChanged = false;
+      });
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Name updated!')));
     }
   }
 }

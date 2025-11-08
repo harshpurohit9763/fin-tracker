@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/shared_preferences_provider.dart';
-import 'package:offline_expense_tracker/subscription_model.dart';
-import 'package:offline_expense_tracker/subscription_provider.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/shared_preferences_provider.dart';
+import 'package:personal_finance/subscription_model.dart';
+import 'package:personal_finance/subscription_provider.dart';
 
 class ManageSubscriptionsScreen extends ConsumerWidget {
   const ManageSubscriptionsScreen({super.key});

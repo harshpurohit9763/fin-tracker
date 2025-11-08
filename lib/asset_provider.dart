@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/asset_model.dart';
-import 'package:offline_expense_tracker/db_helper.dart';
+import 'package:personal_finance/asset_model.dart';
+import 'package:personal_finance/db_helper.dart';
 
 class AssetRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;

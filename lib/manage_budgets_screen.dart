@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/budget_model.dart';
-import 'package:offline_expense_tracker/budget_provider.dart';
-import 'package:offline_expense_tracker/category_model.dart';
-import 'package:offline_expense_tracker/category_provider.dart';
-import 'package:offline_expense_tracker/shared_preferences_provider.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/budget_model.dart';
+import 'package:personal_finance/budget_provider.dart';
+import 'package:personal_finance/category_model.dart';
+import 'package:personal_finance/category_provider.dart';
+import 'package:personal_finance/shared_preferences_provider.dart';
 
 class ManageBudgetsScreen extends ConsumerWidget {
   const ManageBudgetsScreen({super.key});

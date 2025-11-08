@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/dashboard_provider.dart';
-import 'package:offline_expense_tracker/shared_preferences_provider.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/dashboard_provider.dart';
+import 'package:personal_finance/shared_preferences_provider.dart';
 
 class UpcomingEmiPanel extends ConsumerWidget {
   const UpcomingEmiPanel({super.key});
@@ -35,7 +35,8 @@ class UpcomingEmiPanel extends ConsumerWidget {
                       'Due: ${AppFormatters.formatDate(emi.nextDueDate)}',
                     ),
                     trailing: Text(
-                      AppFormatters.formatCurrency(emi.monthlyEmiAmount, currency),
+                      AppFormatters.formatCurrency(
+                          emi.monthlyEmiAmount, currency),
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.primary,

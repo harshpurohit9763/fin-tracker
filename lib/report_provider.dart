@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/report_repo.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/report_repo.dart';
 
 import 'category_provider.dart';
 

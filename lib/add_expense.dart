@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/category_model.dart';
-import 'package:offline_expense_tracker/category_provider.dart';
-import 'package:offline_expense_tracker/dashboard_provider.dart';
-import 'package:offline_expense_tracker/expense_model.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/category_model.dart';
+import 'package:personal_finance/category_provider.dart';
+import 'package:personal_finance/dashboard_provider.dart';
+import 'package:personal_finance/expense_model.dart';
 
 class AddExpenseScreen extends ConsumerStatefulWidget {
   final Expense? expense; // To edit existing expense

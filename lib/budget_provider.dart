@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/budget_model.dart';
-import 'package:offline_expense_tracker/db_helper.dart';
-import 'package:offline_expense_tracker/report_provider.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/budget_model.dart';
+import 'package:personal_finance/db_helper.dart';
+import 'package:personal_finance/report_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 class BudgetRepository {

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:offline_expense_tracker/emi_model.dart';
-import 'package:offline_expense_tracker/dashboard_provider.dart';
-import 'package:offline_expense_tracker/emi_provider.dart';
+import 'package:personal_finance/emi_model.dart';
+import 'package:personal_finance/dashboard_provider.dart';
+import 'package:personal_finance/emi_provider.dart';
 
 class AddEmiScreen extends ConsumerStatefulWidget {
   final Emi? emi; // To edit existing EMI

@@ -1,8 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/report_provider.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/report_provider.dart';
 
 class CategoryPieChartWidget extends ConsumerWidget {
   const CategoryPieChartWidget({super.key});

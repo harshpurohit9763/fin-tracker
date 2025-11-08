@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/asset_provider.dart';
-import 'package:offline_expense_tracker/emi_provider.dart';
-import 'package:offline_expense_tracker/manage_assets_screen.dart';
-import 'package:offline_expense_tracker/net_worth_provider.dart';
-import 'package:offline_expense_tracker/shared_preferences_provider.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/asset_provider.dart';
+import 'package:personal_finance/emi_provider.dart';
+import 'package:personal_finance/manage_assets_screen.dart';
+import 'package:personal_finance/net_worth_provider.dart';
+import 'package:personal_finance/shared_preferences_provider.dart';
 
 class NetWorthScreen extends ConsumerWidget {
   const NetWorthScreen({super.key});

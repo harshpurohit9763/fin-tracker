@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/asset_provider.dart';
-import 'package:offline_expense_tracker/budget_provider.dart';
-import 'package:offline_expense_tracker/category_pie_chart.dart';
-import 'package:offline_expense_tracker/insights_provider.dart';
-import 'package:offline_expense_tracker/report_provider.dart';
-import 'package:offline_expense_tracker/report_exporter.dart';
-import 'package:offline_expense_tracker/shared_preferences_provider.dart';
-import 'package:offline_expense_tracker/subscription_provider.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/asset_provider.dart';
+import 'package:personal_finance/budget_provider.dart';
+import 'package:personal_finance/category_pie_chart.dart';
+import 'package:personal_finance/insights_provider.dart';
+import 'package:personal_finance/report_provider.dart';
+import 'package:personal_finance/report_exporter.dart';
+import 'package:personal_finance/shared_preferences_provider.dart';
+import 'package:personal_finance/subscription_provider.dart';
 
 import 'expense_model.dart';
 

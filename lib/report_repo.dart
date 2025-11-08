@@ -1,5 +1,5 @@
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/db_helper.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/db_helper.dart';
 
 class ReportRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;

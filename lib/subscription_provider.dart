@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/db_helper.dart';
-import 'package:offline_expense_tracker/subscription_model.dart';
+import 'package:personal_finance/db_helper.dart';
+import 'package:personal_finance/subscription_model.dart';
 
 class SubscriptionRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;

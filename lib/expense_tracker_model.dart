@@ -1,6 +1,6 @@
-import 'package:offline_expense_tracker/category_model.dart';
-import 'package:offline_expense_tracker/db_helper.dart';
-import 'package:offline_expense_tracker/expense_model.dart';
+import 'package:personal_finance/category_model.dart';
+import 'package:personal_finance/db_helper.dart';
+import 'package:personal_finance/expense_model.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ExpenseRepository {

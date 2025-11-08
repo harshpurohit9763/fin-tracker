@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/add_emi_screen.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/emi_model.dart';
-import 'package:offline_expense_tracker/emi_provider.dart';
-import 'package:offline_expense_tracker/shared_preferences_provider.dart';
+import 'package:personal_finance/add_emi_screen.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/emi_model.dart';
+import 'package:personal_finance/emi_provider.dart';
+import 'package:personal_finance/shared_preferences_provider.dart';
 
 class EmiListScreen extends ConsumerWidget {
   const EmiListScreen({super.key});

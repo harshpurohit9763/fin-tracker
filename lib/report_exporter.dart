@@ -2,12 +2,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/asset_model.dart';
-import 'package:offline_expense_tracker/budget_provider.dart';
-import 'package:offline_expense_tracker/expense_model.dart';
-import 'package:offline_expense_tracker/insights_provider.dart';
-import 'package:offline_expense_tracker/subscription_model.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/asset_model.dart';
+import 'package:personal_finance/budget_provider.dart';
+import 'package:personal_finance/expense_model.dart';
+import 'package:personal_finance/insights_provider.dart';
+import 'package:personal_finance/subscription_model.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';

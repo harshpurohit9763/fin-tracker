@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/add_expense.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/category_provider.dart';
-import 'package:offline_expense_tracker/shared_preferences_provider.dart';
+import 'package:personal_finance/add_expense.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/category_provider.dart';
+import 'package:personal_finance/shared_preferences_provider.dart';
 
 class ExpenseListScreen extends ConsumerWidget {
   const ExpenseListScreen({super.key});

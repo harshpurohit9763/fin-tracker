@@ -1,5 +1,5 @@
-import 'package:offline_expense_tracker/db_helper.dart';
-import 'package:offline_expense_tracker/emi_model.dart';
+import 'package:personal_finance/db_helper.dart';
+import 'package:personal_finance/emi_model.dart';
 
 class EmiRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;

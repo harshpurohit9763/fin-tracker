@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/category_model.dart';
-import 'package:offline_expense_tracker/expense_model.dart';
-import 'package:offline_expense_tracker/expense_tracker_model.dart';
+import 'package:personal_finance/category_model.dart';
+import 'package:personal_finance/expense_model.dart';
+import 'package:personal_finance/expense_tracker_model.dart';
 
 // Provides the repository instance
 final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
@@ -46,6 +46,13 @@ class CategoryListNotifier extends StateNotifier<AsyncValue<List<Category>>> {
 
   Future<void> deleteCategory(int id) async {
     await _repository.deleteCategory(id);
+    await _fetchCategories();
+  }
+
+  Future<void> deleteMultipleCategories(List<int> ids) async {
+    for (var id in ids) {
+      await _repository.deleteCategory(id);
+    }
     await _fetchCategories();
   }
 }

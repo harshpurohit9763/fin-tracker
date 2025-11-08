@@ -1,19 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/category_model.dart';
-import 'package:offline_expense_tracker/category_provider.dart';
-import 'package:offline_expense_tracker/insights_provider.dart';
+import 'package:personal_finance/category_model.dart';
+import 'package:personal_finance/category_provider.dart';
+import 'package:personal_finance/insights_provider.dart';
 
-class ManageCategoriesScreen extends ConsumerWidget {
+class ManageCategoriesScreen extends ConsumerStatefulWidget {
   const ManageCategoriesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ManageCategoriesScreen> createState() =>
+      _ManageCategoriesScreenState();
+}
+
+class _ManageCategoriesScreenState
+    extends ConsumerState<ManageCategoriesScreen> {
+  bool _isSelectionMode = false;
+  final Set<int> _selectedCategories = {};
+
+  void _toggleSelection(int categoryId) {
+    setState(() {
+      if (_selectedCategories.contains(categoryId)) {
+        _selectedCategories.remove(categoryId);
+        if (_selectedCategories.isEmpty) {
+          _isSelectionMode = false;
+        }
+      } else {
+        _selectedCategories.add(categoryId);
+      }
+    });
+  }
+
+  void _enterSelectionMode(int categoryId) {
+    setState(() {
+      _isSelectionMode = true;
+      _selectedCategories.add(categoryId);
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedCategories.clear();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoryListProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Manage Categories'),
+        leading: _isSelectionMode
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: _exitSelectionMode,
+              )
+            : null,
+        title: Text(_isSelectionMode
+            ? '${_selectedCategories.length} selected'
+            : 'Manage Categories'),
+        actions: _isSelectionMode
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _confirmDeleteMultiple(context),
+                ),
+              ]
+            : [],
       ),
       body: categoriesAsync.when(
         data: (categories) {
@@ -24,15 +77,25 @@ class ManageCategoriesScreen extends ConsumerWidget {
             itemCount: categories.length,
             itemBuilder: (context, index) {
               final category = categories[index];
+              final isSelected = _selectedCategories.contains(category.id!);
               return ListTile(
+                tileColor: isSelected
+                    ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                    : null,
                 leading: _getCategoryTypeIcon(category.type),
                 title: Text(category.name),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => _confirmDelete(context, ref, category),
-                ),
-                onTap: () =>
-                    _showEditCategoryTypeDialog(context, ref, category),
+                onTap: () {
+                  if (_isSelectionMode) {
+                    _toggleSelection(category.id!);
+                  } else {
+                    _showEditCategoryTypeDialog(context, category);
+                  }
+                },
+                onLongPress: () {
+                  if (!_isSelectionMode) {
+                    _enterSelectionMode(category.id!);
+                  }
+                },
               );
             },
           );
@@ -41,7 +104,7 @@ class ManageCategoriesScreen extends ConsumerWidget {
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddCategoryDialog(context, ref),
+        onPressed: () => _showAddCategoryDialog(context),
         child: const Icon(Icons.add),
       ),
     );
@@ -60,7 +123,32 @@ class ManageCategoriesScreen extends ConsumerWidget {
     }
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, Category category) {
+  void _confirmDeleteMultiple(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Delete ${_selectedCategories.length} Categories?'),
+        content: const Text(
+            'Are you sure you want to delete the selected categories? This will not affect existing expenses.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () {
+                ref
+                    .read(categoryListProvider.notifier)
+                    .deleteMultipleCategories(_selectedCategories.toList());
+                _exitSelectionMode();
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, Category category) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -90,7 +178,7 @@ class ManageCategoriesScreen extends ConsumerWidget {
     );
   }
 
-  void _showAddCategoryDialog(BuildContext context, WidgetRef ref) {
+  void _showAddCategoryDialog(BuildContext context) {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController();
 
@@ -147,8 +235,7 @@ class ManageCategoriesScreen extends ConsumerWidget {
     );
   }
 
-  void _showEditCategoryTypeDialog(
-      BuildContext context, WidgetRef ref, Category category) {
+  void _showEditCategoryTypeDialog(BuildContext context, Category category) {
     CategoryType selectedType = category.type;
     showDialog(
         context: context,

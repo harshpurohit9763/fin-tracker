@@ -1,4 +1,4 @@
-name: offline_expense_tracker
+name: personal_finance
 description: A fully offline expense and EMI tracker.
 publish_to: 'none' # Remove this line if you want to publish to pub.dev
 

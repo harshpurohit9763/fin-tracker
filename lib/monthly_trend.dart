@@ -2,7 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:offline_expense_tracker/dashboard_provider.dart';
+import 'package:personal_finance/dashboard_provider.dart';
 
 class MonthlyTrendChart extends ConsumerWidget {
   const MonthlyTrendChart({super.key});

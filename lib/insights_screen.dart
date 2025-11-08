@@ -1,9 +1,9 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/app_formater.dart';
-import 'package:offline_expense_tracker/shared_preferences_provider.dart';
-import 'package:offline_expense_tracker/insights_provider.dart';
+import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/shared_preferences_provider.dart';
+import 'package:personal_finance/insights_provider.dart';
 
 import 'manage_subscriptions_screen.dart';
 import 'subscription_provider.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:offline_expense_tracker/emi_list_sccreen.dart';
-import 'package:offline_expense_tracker/expense_list.dart';
-import 'package:offline_expense_tracker/manage_assets_screen.dart';
+import 'package:personal_finance/emi_list_sccreen.dart';
+import 'package:personal_finance/expense_list.dart';
+import 'package:personal_finance/manage_assets_screen.dart';
 
 import 'dashboard_screen.dart';
 

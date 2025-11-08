@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/asset_provider.dart';
-import 'package:offline_expense_tracker/emi_provider.dart';
+import 'package:personal_finance/asset_provider.dart';
+import 'package:personal_finance/emi_provider.dart';
 
 import 'insights_provider.dart';
 

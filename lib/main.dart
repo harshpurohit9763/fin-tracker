@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:offline_expense_tracker/app_navigation.dart';
-import 'package:offline_expense_tracker/db_helper.dart';
-import 'package:offline_expense_tracker/notification_helper.dart';
-import 'package:offline_expense_tracker/profile_screen.dart';
-import 'package:offline_expense_tracker/shared_preferences_provider.dart';
-import 'package:offline_expense_tracker/themes.dart';
+import 'package:personal_finance/app_navigation.dart';
+import 'package:personal_finance/db_helper.dart';
+import 'package:personal_finance/notification_helper.dart';
+import 'package:personal_finance/profile_screen.dart';
+import 'package:personal_finance/shared_preferences_provider.dart';
+import 'package:personal_finance/themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-import 'package:offline_expense_tracker/background_service.dart';
+import 'package:personal_finance/background_service.dart';
 import 'package:workmanager/workmanager.dart';
 
 void main() async {

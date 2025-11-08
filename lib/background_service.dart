@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:offline_expense_tracker/db_helper.dart';
-import 'package:offline_expense_tracker/emi_repo.dart';
-import 'package:offline_expense_tracker/notification_helper.dart';
+import 'package:personal_finance/db_helper.dart';
+import 'package:personal_finance/emi_repo.dart';
+import 'package:personal_finance/notification_helper.dart';
 import 'package:workmanager/workmanager.dart';
 
 const simpleTaskKey = "exp_track_simple_task";

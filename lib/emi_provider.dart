@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/emi_model.dart';
-import 'package:offline_expense_tracker/emi_repo.dart';
+import 'package:personal_finance/emi_model.dart';
+import 'package:personal_finance/emi_repo.dart';
 
 // Provides the repository instance
 final emiRepositoryProvider = Provider<EmiRepository>((ref) {

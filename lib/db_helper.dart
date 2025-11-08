@@ -168,67 +168,14 @@ class DatabaseHelper {
 
   Future<void> _insertDefaultCategories(Database db) async {
     List<String> expenseCategories = [
-      // Housing & Utilities
-      "Mortgage or rent",
-      "Phone Number",
-      "Electricity",
-      "Gas",
-      "Water and sewer",
-      "Cable",
-      "Medicine",
-      "Maintenance or repairs house 1",
-      "Maintenance or repairs house 2",
-      "Other Extra Maintenance house 2",
-
-      // Food & Groceries
-      "Rashan",
-      "Vegetables",
-      "Milk / Buttermilk",
-      "Fruits",
-      "Fast food",
-      "Bread and others",
-
-      // Transport & Commute
-      "Rapido",
-      "Metro",
-      "Train Pass",
-      "Dad Ticket",
-
-      // Loans & Credit
-      "Axis Bank Encash",
-      "SBI Encash",
-      "SBI Credit Card",
-      "ICICI Credit Card 1",
-      "ICICI Credit Card 2",
-      "SBI Top-Up Loan",
-
-      // Personal & Miscellaneous
-      "Haircut and shaving",
-      "Ticket",
-      "Given to others",
-      "Others",
-      "Amazon Prime (Subscription)",
-      "Medicine (duration tracking section)",
-      "Dr Visit",
-
-      // Money Transfers / Gifts
-      "Annu Kaka",
-      "Jathi Bua",
-      "Banva to Seva Ram Guchiya",
-      "Tarachand Ji for home inauguration",
-      "Gudiya Mama, Suresh, Kailash Mama",
-      "Murli Maraj",
-      "Sanjju",
-
-      // Household Purchases
-      "Gehu",
-      "Gehu pisai",
-
-      // Small Items / Daily Essentials
-      "Biscuit",
-      "Chips",
-      "Shampoo",
-      "Lice comb",
+      "Housing & Utilities",
+      "Food & Groceries",
+      "Transport & Commute",
+      "Loans & Credit",
+      "Personal & Miscellaneous",
+      "Money Transfers / Gifts",
+      "Household Purchases",
+      "Small Items / Daily Essentials",
     ];
     for (String category in expenseCategories) {
       await db.insert(categoriesTable, {colCatName: category},

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:offline_expense_tracker/category_model.dart';
-import 'package:offline_expense_tracker/category_provider.dart';
-import 'package:offline_expense_tracker/report_provider.dart';
+import 'package:personal_finance/category_model.dart';
+import 'package:personal_finance/category_provider.dart';
+import 'package:personal_finance/report_provider.dart';
 
 class SpendingBreakdown {
   final double needs;
