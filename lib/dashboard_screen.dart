@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/add_expense.dart';
 import 'package:personal_finance/advanced_reports_screen.dart';
 import 'package:personal_finance/budgets_screen.dart';
+import 'package:personal_finance/expense_provider.dart';
 import 'package:personal_finance/insights_screen.dart';
 import 'package:personal_finance/net_worth_screen.dart';
 import 'package:personal_finance/app_formater.dart';
@@ -197,9 +198,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     title: 'EMIs Due This Week',
                                     value: '$count Payments',
                                     icon: Icons.payment,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .secondary,
+                                    color:
+                                        Theme.of(context).colorScheme.secondary,
                                   ),
                                   loading: () => const MetricCard(
                                       title: 'EMIs Due This Week',
@@ -228,7 +228,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                                 loading: () => const MetricCard(
                                     title: "This Month's Spending",
-                                    value: '...', 
+                                    value: '...',
                                     icon: Icons.show_chart,
                                     color: Colors.grey),
                                 error: (e, s) => const MetricCard(
@@ -248,7 +248,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                                 loading: () => const MetricCard(
                                     title: 'EMIs Due This Week',
-                                    value: '...', 
+                                    value: '...',
                                     icon: Icons.payment,
                                     color: Colors.grey),
                                 error: (e, s) => const MetricCard(

@@ -3,6 +3,7 @@ import 'package:personal_finance/budget_provider.dart';
 import 'package:personal_finance/category_provider.dart';
 import 'package:personal_finance/dashboard_provider.dart';
 import 'package:personal_finance/emi_provider.dart';
+import 'package:personal_finance/expense_provider.dart';
 import 'package:personal_finance/income_provider.dart';
 import 'package:personal_finance/notification_helper.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import 'package:personal_finance/shared_preferences_provider.dart';
 import 'package:personal_finance/data_backup_service.dart'; // Added import
 import 'package:personal_finance/db_helper.dart';
 import 'package:personal_finance/subscription_provider.dart'; // Added import
+import 'package:personal_finance/dummy_data_service.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -202,6 +204,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             },
           ),
           ListTile(
+            title: const Text('Populate Dummy Data'),
+            leading: const Icon(Icons.data_usage),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Populate Dummy Data?'),
+                  content: const Text(
+                      'This will add dummy data to your application. Existing data will not be cleared.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: const Text('Populate'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm == true) {
+                await ref.read(dummyDataServiceProvider).populateDummyData();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Dummy data populated!')),
+                );
+                // Invalidate providers to refresh UI
+                ref.invalidate(currentMonthSpendingProvider);
+                ref.invalidate(upcomingEmisThisWeekCountProvider);
+                ref.invalidate(last6MonthsSpendingProvider);
+                ref.invalidate(next3UpcomingEmisProvider);
+                ref.invalidate(expenseListProvider);
+                ref.invalidate(incomeListProvider);
+                ref.invalidate(categoryListProvider);
+                ref.invalidate(budgetListProvider);
+                ref.invalidate(emiListProvider);
+                ref.invalidate(subscriptionListProvider);
+                ref.invalidate(assetListProvider);
+              }
+            },
+          ),
+          ListTile(
             title: const Text('Delete All Data'),
             leading: const Icon(Icons.delete_forever),
             trailing: const Icon(Icons.chevron_right),
@@ -253,15 +299,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
 
-          if (confirm == true) {
-          final database = await DatabaseHelper.instance.database;
-          await database.delete(DatabaseHelper.expensesTable);
-          await database.delete(DatabaseHelper.incomeTable);
-          await database.delete(DatabaseHelper.categoriesTable);
-          await database.delete(DatabaseHelper.budgetsTable);
-          await database.delete(DatabaseHelper.emisTable);
-          await database.delete(DatabaseHelper.subscriptionsTable);
-          await database.delete(DatabaseHelper.assetsTable);
+    if (confirm == true) {
+      final database = await DatabaseHelper.instance.database;
+      await database.delete(DatabaseHelper.expensesTable);
+      await database.delete(DatabaseHelper.incomeTable);
+      await database.delete(DatabaseHelper.categoriesTable);
+      await database.delete(DatabaseHelper.budgetsTable);
+      await database.delete(DatabaseHelper.emisTable);
+      await database.delete(DatabaseHelper.subscriptionsTable);
+      await database.delete(DatabaseHelper.assetsTable);
       final prefs = ref.read(sharedPreferencesProvider);
       await prefs.clear(); // Clear all shared preferences
 

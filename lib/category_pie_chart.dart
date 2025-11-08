@@ -51,34 +51,37 @@ class CategoryPieChartWidget extends ConsumerWidget {
           );
         }).toList();
 
-        return Column(
-          children: [
-            Expanded(
-              child: PieChart(
-                PieChartData(
-                  sections: sections,
-                  centerSpaceRadius: 40,
-                  sectionsSpace: 2,
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(
+                height: 300, // Give a fixed height to the chart area
+                child: PieChart(
+                  PieChartData(
+                    sections: sections,
+                    centerSpaceRadius: 40,
+                    sectionsSpace: 2,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              children: data.keys.map((key) {
-                return Chip(
-                  avatar: CircleAvatar(
-                    backgroundColor: _chartColors[
-                        data.keys.toList().indexOf(key) % _chartColors.length],
-                  ),
-                  label: Text(
-                    '$key: ${AppFormatters.formatCurrency(data[key]!, 'INR')}',
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
+                children: data.keys.map((key) {
+                  return Chip(
+                    avatar: CircleAvatar(
+                      backgroundColor: _chartColors[
+                          data.keys.toList().indexOf(key) % _chartColors.length],
+                    ),
+                    label: Text(
+                      '$key: ${AppFormatters.formatCurrency(data[key]!, 'INR')}',
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),

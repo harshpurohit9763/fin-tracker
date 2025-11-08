@@ -166,6 +166,9 @@ class _FilterBar extends ConsumerWidget {
                       DropdownMenuItem(
                           value: ReportDateRangeType.custom,
                           child: Text('Custom Range...')),
+                      DropdownMenuItem(
+                          value: ReportDateRangeType.selectedMonthYear,
+                          child: Text('Select Month/Year')),
                     ],
                     decoration: const InputDecoration(
                       labelText: 'Report Period',
@@ -175,6 +178,63 @@ class _FilterBar extends ConsumerWidget {
                 ),
               ],
             ),
+            if (rangeType == ReportDateRangeType.selectedMonthYear) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      value: ref.watch(selectedMonthProvider),
+                      onChanged: (newValue) {
+                        if (newValue != null) {
+                          ref.read(selectedMonthProvider.notifier).state =
+                              newValue;
+                          ref.read(reportDateRangeTypeProvider.notifier).state =
+                              ReportDateRangeType.selectedMonthYear;
+                        }
+                      },
+                      items: List.generate(12, (index) {
+                        final month = index + 1;
+                        return DropdownMenuItem(
+                          value: month,
+                          child: Text(AppFormatters.getMonthName(month)),
+                        );
+                      }),
+                      decoration: const InputDecoration(
+                        labelText: 'Month',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      value: ref.watch(selectedYearProvider),
+                      onChanged: (newValue) {
+                        if (newValue != null) {
+                          ref.read(selectedYearProvider.notifier).state =
+                              newValue;
+                          ref.read(reportDateRangeTypeProvider.notifier).state =
+                              ReportDateRangeType.selectedMonthYear;
+                        }
+                      },
+                      items: List.generate(5, (index) {
+                        // Show current year and 4 previous years
+                        final year = DateTime.now().year - index;
+                        return DropdownMenuItem(
+                          value: year,
+                          child: Text(year.toString()),
+                        );
+                      }),
+                      decoration: const InputDecoration(
+                        labelText: 'Year',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -329,7 +389,7 @@ class _CategoryBreakdownCard extends ConsumerWidget {
             Text('Expense Breakdown',
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 16),
-            const SizedBox(height: 300, child: CategoryPieChartWidget()),
+            const CategoryPieChartWidget(),
           ],
         ),
       ),
@@ -453,14 +513,6 @@ class _TransactionListCard extends ConsumerWidget {
               data: (expenses) {
                 return incomesAsync.when(
                   data: (incomes) {
-                    if (expenses.isEmpty && incomes.isEmpty) {
-                      return const SizedBox(
-                          height: 100,
-                          child: Center(
-                              child: Text('No transactions in this period.')));
-                    }
-
-                    // Combine expenses and incomes
                     final allTransactions = <_TransactionItem>[];
                     for (var exp in expenses) {
                       allTransactions.add(_TransactionItem(
@@ -482,32 +534,75 @@ class _TransactionListCard extends ConsumerWidget {
                     // Sort transactions by date
                     allTransactions.sort((a, b) => a.date.compareTo(b.date));
 
-                    return SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columns: const [
-                          DataColumn(label: Text('Date')),
-                          DataColumn(label: Text('Category/Source')),
-                          DataColumn(label: Text('Description')),
-                          DataColumn(label: Text('Type')),
-                          DataColumn(label: Text('Amount'), numeric: true),
-                        ],
-                        rows: allTransactions.map((tx) {
-                          return DataRow(cells: [
-                            DataCell(Text(AppFormatters.formatDate(tx.date))),
-                            DataCell(Text(tx.category)),
-                            DataCell(Text(tx.description)),
-                            DataCell(Text(
-                                tx.type == _TransactionType.expense
-                                    ? 'Expense'
-                                    : 'Income')),
-                            DataCell(Text(
-                                (tx.type == _TransactionType.expense ? '-' : '+') +
-                                    AppFormatters.formatCurrency(
-                                        tx.amount, currency))),
-                          ]);
-                        }).toList(),
-                      ),
+                    if (allTransactions.isEmpty) {
+                      return const SizedBox(
+                          height: 100,
+                          child: Center(
+                              child: Text('No transactions in this period.')));
+                    }
+
+                    final offset = ref.watch(transactionOffsetProvider);
+                    final limit = ref.watch(transactionLimitProvider);
+
+                    return Column(
+                      children: [
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            columns: const [
+                              DataColumn(label: Text('Date')),
+                              DataColumn(label: Text('Category/Source')),
+                              DataColumn(label: Text('Description')),
+                              DataColumn(label: Text('Type')),
+                              DataColumn(label: Text('Amount'), numeric: true),
+                            ],
+                            rows: allTransactions.map((tx) {
+                              return DataRow(cells: [
+                                DataCell(
+                                    Text(AppFormatters.formatDate(tx.date))),
+                                DataCell(Text(tx.category)),
+                                DataCell(Text(tx.description)),
+                                DataCell(Text(
+                                    tx.type == _TransactionType.expense
+                                        ? 'Expense'
+                                        : 'Income')),
+                                DataCell(Text(
+                                    (tx.type == _TransactionType.expense
+                                            ? '-'
+                                            : '+') +
+                                        AppFormatters.formatCurrency(
+                                            tx.amount, currency))),
+                              ]);
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            ElevatedButton(
+                              onPressed: offset > 0
+                                  ? () {
+                                      ref
+                                          .read(transactionOffsetProvider.notifier)
+                                          .state = offset - limit;
+                                    }
+                                  : null,
+                              child: const Text('Previous'),
+                            ),
+                            ElevatedButton(
+                              onPressed: allTransactions.length == limit
+                                  ? () {
+                                      ref
+                                          .read(transactionOffsetProvider.notifier)
+                                          .state = offset + limit;
+                                    }
+                                  : null,
+                              child: const Text('Next'),
+                            ),
+                          ],
+                        ),
+                      ],
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),

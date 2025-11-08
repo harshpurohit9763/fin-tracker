@@ -105,13 +105,18 @@ class _OverallBudgetCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                    'Spent: ${AppFormatters.formatCurrency(spent, currency)}/${AppFormatters.formatCurrency(total, currency)}'),
-                Text(
-                  'Remaining: ${AppFormatters.formatCurrency(remaining, currency)}',
-                  style: TextStyle(
-                      color: remaining > 0 ? Colors.green : Colors.red,
-                      fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Text(
+                      'Spent: ${AppFormatters.formatCurrency(spent, currency)}/${AppFormatters.formatCurrency(total, currency)}'),
+                ),
+                Expanded(
+                  child: Text(
+                    'Remaining: ${AppFormatters.formatCurrency(remaining, currency)}',
+                    textAlign: TextAlign.end,
+                    style: TextStyle(
+                        color: remaining > 0 ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),

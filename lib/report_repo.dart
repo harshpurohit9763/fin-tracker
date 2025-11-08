@@ -1,6 +1,7 @@
 import 'package:personal_finance/app_formater.dart';
 import 'package:personal_finance/db_helper.dart';
 import 'package:personal_finance/income_model.dart';
+import 'package:personal_finance/expense_model.dart'; // Import Expense model
 
 class ReportRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
@@ -13,6 +14,38 @@ class ReportRepository {
     return List.generate(maps.length, (i) {
       return Income.fromMap(maps[i]);
     });
+  }
+
+  // Get paginated expenses for a given date range
+  Future<List<Expense>> getExpensesPaginated(
+      DateTime start, DateTime end, int limit, int offset) async {
+    final db = await _dbHelper.database;
+    final endOfDay = DateTime(end.year, end.month, end.day, 23, 59, 59);
+    final List<Map<String, dynamic>> maps = await db.query(
+      DatabaseHelper.expensesTable,
+      where: '${DatabaseHelper.colDate} >= ? AND ${DatabaseHelper.colDate} <= ?',
+      whereArgs: [start.millisecondsSinceEpoch, endOfDay.millisecondsSinceEpoch],
+      orderBy: '${DatabaseHelper.colDate} DESC',
+      limit: limit,
+      offset: offset,
+    );
+    return List.generate(maps.length, (i) => Expense.fromMap(maps[i]));
+  }
+
+  // Get paginated incomes for a given date range
+  Future<List<Income>> getIncomesPaginated(
+      DateTime start, DateTime end, int limit, int offset) async {
+    final db = await _dbHelper.database;
+    final endOfDay = DateTime(end.year, end.month, end.day, 23, 59, 59);
+    final List<Map<String, dynamic>> maps = await db.query(
+      DatabaseHelper.incomeTable,
+      where: '${DatabaseHelper.colIncomeDate} >= ? AND ${DatabaseHelper.colIncomeDate} <= ?',
+      whereArgs: [start.millisecondsSinceEpoch, endOfDay.millisecondsSinceEpoch],
+      orderBy: '${DatabaseHelper.colIncomeDate} DESC',
+      limit: limit,
+      offset: offset,
+    );
+    return List.generate(maps.length, (i) => Income.fromMap(maps[i]));
   }
 
   // Get total income for a given date range

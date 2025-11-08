@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/add_expense.dart';
 import 'package:personal_finance/app_formater.dart';
-import 'package:personal_finance/category_provider.dart';
+import 'package:personal_finance/expense_provider.dart';
+import 'package:personal_finance/selected_month_year_provider.dart'
+    hide selectedMonthYearProvider;
 import 'package:personal_finance/shared_preferences_provider.dart';
 
 class ExpenseListScreen extends ConsumerWidget {

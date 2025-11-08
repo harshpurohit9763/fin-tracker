@@ -7,6 +7,7 @@ import 'package:personal_finance/category_model.dart';
 import 'package:personal_finance/category_provider.dart';
 import 'package:personal_finance/dashboard_provider.dart';
 import 'package:personal_finance/expense_model.dart';
+import 'package:personal_finance/expense_provider.dart';
 
 class AddExpenseScreen extends ConsumerStatefulWidget {
   final Expense? expense; // To edit existing expense
