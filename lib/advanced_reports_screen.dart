@@ -4,6 +4,7 @@ import 'package:personal_finance/app_formater.dart';
 import 'package:personal_finance/asset_provider.dart';
 import 'package:personal_finance/budget_provider.dart';
 import 'package:personal_finance/category_pie_chart.dart';
+import 'package:personal_finance/income_model.dart';
 import 'package:personal_finance/insights_provider.dart';
 import 'package:personal_finance/report_provider.dart';
 import 'package:personal_finance/report_exporter.dart';
@@ -60,6 +61,8 @@ class _AdvancedReportsScreenState extends ConsumerState<AdvancedReportsScreen> {
               final currency = ref.read(currencyProvider);
               final expenses = await ref.read(filteredExpensesProvider.future)
                   as List<Expense>;
+              final incomes = await ref.read(filteredIncomeProvider.future)
+                  as List<Income>;
               final spendingBreakdown =
                   await ref.read(spendingBreakdownProvider.future);
               // Correctly read the data from StateNotifierProviders
@@ -74,6 +77,7 @@ class _AdvancedReportsScreenState extends ConsumerState<AdvancedReportsScreen> {
                 userName: userName,
                 currency: currency,
                 expenses: expenses,
+                incomes: incomes,
                 spendingBreakdown: spendingBreakdown,
                 assets: assets,
                 subscriptions: subscriptions,
@@ -199,10 +203,13 @@ class _IncomeVsExpenseCard extends ConsumerWidget {
             breakdownAsync.when(
               data: (data) {
                 final totalExpenses = data.needs + data.wants;
-                final netFlow = data.investments - totalExpenses;
+                final netFlow = data.income + data.investments - totalExpenses;
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildSummaryRow(context, 'Total Income',
+                        AppFormatters.formatCurrency(data.income, currency), Colors.blue),
+                    const SizedBox(height: 8),
                     _buildSummaryRow(
                         context,
                         'Total Expenses (Needs + Wants)',
@@ -431,6 +438,7 @@ class _TransactionListCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final expensesAsync = ref.watch(filteredExpensesProvider);
+    final incomesAsync = ref.watch(filteredIncomeProvider);
     final currency = ref.watch(currencyProvider);
 
     return Card(
@@ -443,31 +451,67 @@ class _TransactionListCard extends ConsumerWidget {
             const SizedBox(height: 8),
             expensesAsync.when(
               data: (expenses) {
-                if (expenses.isEmpty) {
-                  return const SizedBox(
-                      height: 100,
-                      child: Center(
-                          child: Text('No transactions in this period.')));
-                }
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('Date')),
-                      DataColumn(label: Text('Category')),
-                      DataColumn(label: Text('Description')),
-                      DataColumn(label: Text('Amount'), numeric: true),
-                    ],
-                    rows: expenses.map((expense) {
-                      return DataRow(cells: [
-                        DataCell(Text(AppFormatters.formatDate(expense.date))),
-                        DataCell(Text(expense.category)),
-                        DataCell(Text(expense.description ?? '')),
-                        DataCell(Text(AppFormatters.formatCurrency(
-                            expense.amount, currency))),
-                      ]);
-                    }).toList(),
-                  ),
+                return incomesAsync.when(
+                  data: (incomes) {
+                    if (expenses.isEmpty && incomes.isEmpty) {
+                      return const SizedBox(
+                          height: 100,
+                          child: Center(
+                              child: Text('No transactions in this period.')));
+                    }
+
+                    // Combine expenses and incomes
+                    final allTransactions = <_TransactionItem>[];
+                    for (var exp in expenses) {
+                      allTransactions.add(_TransactionItem(
+                          date: exp.date,
+                          description: exp.description ?? '',
+                          amount: exp.amount,
+                          type: _TransactionType.expense,
+                          category: exp.category));
+                    }
+                    for (var inc in incomes) {
+                      allTransactions.add(_TransactionItem(
+                          date: inc.date,
+                          description: inc.description,
+                          amount: inc.amount,
+                          type: _TransactionType.income,
+                          category: inc.source));
+                    }
+
+                    // Sort transactions by date
+                    allTransactions.sort((a, b) => a.date.compareTo(b.date));
+
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        columns: const [
+                          DataColumn(label: Text('Date')),
+                          DataColumn(label: Text('Category/Source')),
+                          DataColumn(label: Text('Description')),
+                          DataColumn(label: Text('Type')),
+                          DataColumn(label: Text('Amount'), numeric: true),
+                        ],
+                        rows: allTransactions.map((tx) {
+                          return DataRow(cells: [
+                            DataCell(Text(AppFormatters.formatDate(tx.date))),
+                            DataCell(Text(tx.category)),
+                            DataCell(Text(tx.description)),
+                            DataCell(Text(
+                                tx.type == _TransactionType.expense
+                                    ? 'Expense'
+                                    : 'Income')),
+                            DataCell(Text(
+                                (tx.type == _TransactionType.expense ? '-' : '+') +
+                                    AppFormatters.formatCurrency(
+                                        tx.amount, currency))),
+                          ]);
+                        }).toList(),
+                      ),
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (e, s) => Text('Error: $e'),
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -478,4 +522,22 @@ class _TransactionListCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+enum _TransactionType { income, expense }
+
+class _TransactionItem {
+  final DateTime date;
+  final String description;
+  final double amount;
+  final _TransactionType type;
+  final String category;
+
+  _TransactionItem({
+    required this.date,
+    required this.description,
+    required this.amount,
+    required this.type,
+    required this.category,
+  });
 }

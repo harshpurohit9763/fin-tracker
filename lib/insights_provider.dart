@@ -7,9 +7,13 @@ class SpendingBreakdown {
   final double needs;
   final double wants;
   final double investments;
+  final double income;
 
   SpendingBreakdown(
-      {this.needs = 0.0, this.wants = 0.0, this.investments = 0.0});
+      {this.needs = 0.0,
+      this.wants = 0.0,
+      this.investments = 0.0,
+      this.income = 0.0});
 
   double get total => needs + wants + investments;
 }
@@ -27,6 +31,9 @@ final spendingBreakdownProvider =
       final breakdown = await ref
           .watch(reportRepositoryProvider)
           .getCategoryBreakdown(range.start, range.end);
+      final totalIncome = await ref
+          .watch(reportRepositoryProvider)
+          .getTotalIncomeForDateRange(range.start, range.end);
 
       double needsTotal = 0;
       double wantsTotal = 0;
@@ -45,7 +52,10 @@ final spendingBreakdownProvider =
       }
 
       return SpendingBreakdown(
-          needs: needsTotal, wants: wantsTotal, investments: investmentsTotal);
+          needs: needsTotal,
+          wants: wantsTotal,
+          investments: investmentsTotal,
+          income: totalIncome);
     },
     // If categories are loading or have an error, the spending breakdown can't be calculated.
     loading: () =>

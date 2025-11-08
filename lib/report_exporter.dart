@@ -6,6 +6,7 @@ import 'package:personal_finance/app_formater.dart';
 import 'package:personal_finance/asset_model.dart';
 import 'package:personal_finance/budget_provider.dart';
 import 'package:personal_finance/expense_model.dart';
+import 'package:personal_finance/income_model.dart';
 import 'package:personal_finance/insights_provider.dart';
 import 'package:personal_finance/subscription_model.dart';
 import 'package:pdf/pdf.dart';
@@ -24,6 +25,7 @@ class ReportExporter {
     required String userName,
     required String currency,
     required List<Expense> expenses,
+    required List<Income> incomes,
     required SpendingBreakdown spendingBreakdown,
     required List<Asset> assets,
     required List<Subscription> subscriptions,
@@ -123,11 +125,21 @@ class ReportExporter {
         build: (pw.Context context) {
           final totalExpenses =
               spendingBreakdown.needs + spendingBreakdown.wants;
-          final netFlow = spendingBreakdown.investments - totalExpenses;
+          final totalIncome = incomes.fold<double>(0, (sum, income) => sum + income.amount);
+          final netFlow = totalIncome + spendingBreakdown.investments - totalExpenses;
 
           return [
             sectionHeader('Review of Operations'),
             pw.SizedBox(height: 16),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Total Income:'),
+                pw.Text(AppFormatters.formatCurrency(totalIncome, currency),
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.blue)),
+              ],
+            ),
+            pw.SizedBox(height: 8),
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
@@ -219,7 +231,7 @@ class ReportExporter {
                 style: pw.TextStyle(
                     fontSize: 20, fontWeight: pw.FontWeight.bold))),
         build: (pw.Context context) {
-          return [_buildTransactionTable(expenses, currency)];
+          return [_buildTransactionTable(expenses, incomes, currency)];
         },
       ),
     );
@@ -331,16 +343,42 @@ class ReportExporter {
   }
 
   static pw.Widget _buildTransactionTable(
-      List<Expense> expenses, String currency) {
-    if (expenses.isEmpty) return pw.Text('No transactions in this period.');
+      List<Expense> expenses, List<Income> incomes, String currency) {
+    if (expenses.isEmpty && incomes.isEmpty) {
+      return pw.Text('No transactions in this period.');
+    }
 
-    final headers = ['Date', 'Category', 'Description', 'Amount'];
-    final data = expenses
-        .map((exp) => [
-              AppFormatters.formatDate(exp.date),
-              exp.category,
-              exp.description ?? '-',
-              AppFormatters.formatCurrency(exp.amount, currency)
+    // Combine expenses and incomes
+    final allTransactions = <_Transaction>[];
+    for (var exp in expenses) {
+      allTransactions.add(_Transaction(
+          date: exp.date,
+          description: exp.description ?? '-',
+          amount: exp.amount,
+          type: _TransactionType.expense,
+          category: exp.category));
+    }
+    for (var inc in incomes) {
+      allTransactions.add(_Transaction(
+          date: inc.date,
+          description: inc.description,
+          amount: inc.amount,
+          type: _TransactionType.income,
+          category: inc.source));
+    }
+
+    // Sort transactions by date
+    allTransactions.sort((a, b) => a.date.compareTo(b.date));
+
+    final headers = ['Date', 'Category/Source', 'Description', 'Type', 'Amount'];
+    final data = allTransactions
+        .map((tx) => [
+              AppFormatters.formatDate(tx.date),
+              tx.category,
+              tx.description,
+              tx.type == _TransactionType.expense ? 'Expense' : 'Income',
+              (tx.type == _TransactionType.expense ? '-' : '+') +
+                  AppFormatters.formatCurrency(tx.amount, currency)
             ])
         .toList();
 
@@ -356,8 +394,27 @@ class ReportExporter {
         0: pw.Alignment.centerLeft,
         1: pw.Alignment.centerLeft,
         2: pw.Alignment.centerLeft,
-        3: pw.Alignment.centerRight,
+        3: pw.Alignment.center,
+        4: pw.Alignment.centerRight,
       },
     );
   }
+}
+
+enum _TransactionType { income, expense }
+
+class _Transaction {
+  final DateTime date;
+  final String description;
+  final double amount;
+  final _TransactionType type;
+  final String category;
+
+  _Transaction({
+    required this.date,
+    required this.description,
+    required this.amount,
+    required this.type,
+    required this.category,
+  });
 }

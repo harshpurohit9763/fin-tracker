@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_finance/app_formater.dart';
+import 'package:personal_finance/income_model.dart';
 import 'package:personal_finance/report_repo.dart';
 
 import 'category_provider.dart';
@@ -89,5 +89,28 @@ final filteredExpensesProvider = FutureProvider.autoDispose((ref) async {
     }).toList(),
     loading: () => [], // Return an empty list while loading
     error: (e, s) => throw e, // Propagate the error
+  );
+});
+
+// Provider for all income records
+final allIncomeListProvider =
+    FutureProvider.autoDispose<List<Income>>((ref) async {
+  final repository = ref.watch(reportRepositoryProvider);
+  return repository.getAllIncomes();
+});
+
+// A provider that returns a filtered list of incomes based on the current date range
+final filteredIncomeProvider =
+    FutureProvider.autoDispose<List<Income>>((ref) async {
+  final allIncomesAsync = ref.watch(allIncomeListProvider);
+  final range = ref.watch(currentDateRangeProvider);
+
+  return allIncomesAsync.when(
+    data: (allIncomes) => allIncomes.where((income) {
+      return !income.date.isBefore(range.start) &&
+          !income.date.isAfter(range.end.add(const Duration(days: 1)));
+    }).toList(),
+    loading: () => [],
+    error: (e, s) => throw e,
   );
 });

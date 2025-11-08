@@ -1,8 +1,34 @@
 import 'package:personal_finance/app_formater.dart';
 import 'package:personal_finance/db_helper.dart';
+import 'package:personal_finance/income_model.dart';
 
 class ReportRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+
+  // Get all incomes
+  Future<List<Income>> getAllIncomes() async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps =
+        await db.query(DatabaseHelper.incomeTable);
+    return List.generate(maps.length, (i) {
+      return Income.fromMap(maps[i]);
+    });
+  }
+
+  // Get total income for a given date range
+  Future<double> getTotalIncomeForDateRange(DateTime start, DateTime end) async {
+    final db = await _dbHelper.database;
+    final endOfDay = DateTime(end.year, end.month, end.day, 23, 59, 59);
+    final result = await db.rawQuery(
+      'SELECT SUM(${DatabaseHelper.colIncomeAmount}) as total FROM ${DatabaseHelper.incomeTable} WHERE ${DatabaseHelper.colIncomeDate} >= ? AND ${DatabaseHelper.colIncomeDate} <= ?',
+      [start.millisecondsSinceEpoch, endOfDay.millisecondsSinceEpoch],
+    );
+
+    if (result.isNotEmpty && result.first['total'] != null) {
+      return (result.first['total'] as num).toDouble();
+    }
+    return 0.0;
+  }
 
   // Get total spending for a given date range
   Future<double> getTotalForDateRange(DateTime start, DateTime end) async {
