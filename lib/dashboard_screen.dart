@@ -14,7 +14,6 @@ import 'package:personal_finance/monthly_trend.dart';
 import 'package:personal_finance/overlapping_card_view.dart';
 import 'package:personal_finance/flippable_emi_card.dart';
 import 'package:personal_finance/shared_preferences_provider.dart';
-import 'package:personal_finance/tutorial_overlay.dart';
 import 'package:personal_finance/upcomming_emi.dart';
 import 'package:personal_finance/upcoming_emi_card.dart';
 import 'package:personal_finance/profile_screen.dart';
@@ -40,58 +39,13 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _showFabOptions = false;
-  // Keys for tutorial
-  final GlobalKey<State<StatefulWidget>> _profileButtonKey = GlobalKey<State<StatefulWidget>>();
-  final GlobalKey<State<StatefulWidget>> _metricsCardKey = GlobalKey<State<StatefulWidget>>();
-  final GlobalKey<State<StatefulWidget>> _monthlyTrendKey = GlobalKey<State<StatefulWidget>>();
-  final GlobalKey<State<StatefulWidget>> _toolsGridKey = GlobalKey<State<StatefulWidget>>();
-  final GlobalKey<State<StatefulWidget>> _fabKey = GlobalKey<State<StatefulWidget>>();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showTutorial();
+      // _showTutorial(); // Removed tutorial call
     });
-  }
-
-  Future<void> _showTutorial() async {
-    final tutorialProvider = ref.read(tutorialVisibilityProvider);
-    final isSeen = await tutorialProvider.isTutorialSeen('dashboard');
-    if (!isSeen && mounted) {
-      final steps = [
-        TutorialStep(
-          key: _profileButtonKey,
-          text:
-              'Welcome! Tap here to manage your profile, settings, and categories.',
-          shape: const CircleBorder(),
-        ),
-        TutorialStep(
-          key: _metricsCardKey,
-          text:
-              'These cards show a quick summary of your spending and upcoming EMIs for the current period.',
-        ),
-        TutorialStep(
-          key: _monthlyTrendKey,
-          text:
-              'This chart visualizes your spending habits over the last 6 months.',
-        ),
-        TutorialStep(
-          key: _toolsGridKey,
-          text:
-              'Explore powerful tools like Budgets, Insights, and Net Worth tracking here.',
-        ),
-        TutorialStep(
-          key: _fabKey,
-          text: 'Tap this button anytime to quickly add a new expense.',
-          shape: const CircleBorder(),
-        ),
-      ];
-
-      await TutorialOverlay.show(context, steps, () {
-        tutorialProvider.setTutorialSeen('dashboard');
-      });
-    }
   }
 
   @override
@@ -189,7 +143,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ? [] // No actions when EMI card is shown
                       : [
                           IconButton(
-                            key: _profileButtonKey,
                             icon: const CircleAvatar(child: Icon(Icons.person)),
                             onPressed: navigateToProfile,
                           ),
@@ -204,11 +157,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
               sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // Key Metrics Cards
-                  KeyedSubtree(
-                    key: _metricsCardKey,
-                    child: LayoutBuilder(
+                delegate: SliverChildListDelegate(
+                  [
+                    // Key Metrics Cards
+                    LayoutBuilder(
                       builder: (context, constraints) {
                         bool isWide = constraints.maxWidth > 600;
                         if (isWide) {
@@ -276,7 +228,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                                 loading: () => const MetricCard(
                                     title: "This Month's Spending",
-                                    value: '...',
+                                    value: '...', 
                                     icon: Icons.show_chart,
                                     color: Colors.grey),
                                 error: (e, s) => const MetricCard(
@@ -296,7 +248,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                                 loading: () => const MetricCard(
                                     title: 'EMIs Due This Week',
-                                    value: '...',
+                                    value: '...', 
                                     icon: Icons.payment,
                                     color: Colors.grey),
                                 error: (e, s) => const MetricCard(
@@ -310,34 +262,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         }
                       },
                     ),
-                  ),
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  // Monthly Trend Bar Chart
-                  Text('Monthly Spending Trend (Last 6 Months)',
-                      style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 16),
-                  KeyedSubtree(
-                    key: _monthlyTrendKey,
-                    child:
-                        const SizedBox(height: 250, child: MonthlyTrendChart()),
-                  ),
-                  const SizedBox(height: 24),
+                    // Monthly Trend Bar Chart
+                    Text('Monthly Spending Trend (Last 6 Months)',
+                        style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 16),
+                    const SizedBox(height: 250, child: MonthlyTrendChart()),
+                    const SizedBox(height: 24),
 
-                  // EMI Due Panel
-                  Text('Upcoming EMI Payments',
-                      style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 16),
-                  const UpcomingEmiPanel(),
-                  const SizedBox(height: 24),
+                    // EMI Due Panel
+                    Text('Upcoming EMI Payments',
+                        style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 16),
+                    const UpcomingEmiPanel(),
+                    const SizedBox(height: 24),
 
-                  // Financial Tools Grid
-                  Text('Financial Tools',
-                      style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 16),
-                  KeyedSubtree(
-                    key: _toolsGridKey,
-                    child: GridView.count(
+                    // Financial Tools Grid
+                    Text('Financial Tools',
+                        style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 16),
+                    GridView.count(
                       crossAxisCount: 2,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -383,8 +328,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                         const AdvancedReportsScreen()))),
                       ],
                     ),
-                  ),
-                ]),
+                  ],
+                ),
               ),
             ),
           ],
@@ -413,7 +358,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const SizedBox(height: 10),
           ],
           FloatingActionButton(
-            key: _fabKey,
             onPressed: () {
               setState(() {
                 _showFabOptions = !_showFabOptions;

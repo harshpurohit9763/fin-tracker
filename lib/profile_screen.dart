@@ -1,12 +1,17 @@
+import 'package:personal_finance/asset_provider.dart';
+import 'package:personal_finance/budget_provider.dart';
+import 'package:personal_finance/category_provider.dart';
+import 'package:personal_finance/dashboard_provider.dart';
 import 'package:personal_finance/emi_provider.dart';
+import 'package:personal_finance/income_provider.dart';
 import 'package:personal_finance/notification_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/manage_categories_screen.dart';
 import 'package:personal_finance/shared_preferences_provider.dart';
-import 'package:personal_finance/tutorial_overlay.dart';
 import 'package:personal_finance/data_backup_service.dart'; // Added import
-import 'package:personal_finance/db_helper.dart'; // Added import
+import 'package:personal_finance/db_helper.dart';
+import 'package:personal_finance/subscription_provider.dart'; // Added import
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -18,13 +23,6 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late TextEditingController _nameController;
   bool _isNameChanged = false;
-
-  // Keys for tutorial
-  final GlobalKey _nameKey = GlobalKey();
-  final GlobalKey _currencyKey = GlobalKey();
-  final GlobalKey _appearanceKey = GlobalKey();
-  final GlobalKey _themeColorKey = GlobalKey();
-  final GlobalKey _categoriesKey = GlobalKey();
 
   @override
   void initState() {
@@ -40,43 +38,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showTutorial();
+      // _showTutorial(); // Removed tutorial call
     });
-  }
-
-  Future<void> _showTutorial() async {
-    final tutorialProvider = ref.read(tutorialVisibilityProvider);
-    final isSeen = await tutorialProvider.isTutorialSeen('profile');
-    if (!isSeen && mounted) {
-      final steps = [
-        TutorialStep(
-          key: _nameKey,
-          text: 'You can personalize the app by setting your name here.',
-        ),
-        TutorialStep(
-          key: _currencyKey,
-          text:
-              'Select your preferred currency. All financial data in the app will use this setting.',
-        ),
-        TutorialStep(
-          key: _appearanceKey,
-          text: 'Choose between light, dark, or system default theme.',
-        ),
-        TutorialStep(
-          key: _themeColorKey,
-          text: 'Customize the app\'s accent color to match your style.',
-        ),
-        TutorialStep(
-          key: _categoriesKey,
-          text:
-              'Manage your expense and income categories here. This is crucial for accurate tracking!',
-        ),
-      ];
-
-      await TutorialOverlay.show(context, steps, () {
-        tutorialProvider.setTutorialSeen('profile');
-      });
-    }
   }
 
   @override
@@ -120,14 +83,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: KeyedSubtree(
-                key: _nameKey,
-                child: TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Your Name',
-                    border: OutlineInputBorder(),
-                  ),
+              child: TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Your Name',
+                  border: OutlineInputBorder(),
                 ),
               ),
             ),
@@ -139,7 +99,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 8),
           Card(
-            key: _currencyKey,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Column(
@@ -167,7 +126,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 8),
           Card(
-            key: _appearanceKey,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Column(
@@ -201,7 +159,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 8),
           Card(
-            key: _themeColorKey,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: _ColorPicker(),
@@ -209,7 +166,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 24),
           ListTile(
-            key: _categoriesKey,
             title: const Text('Manage Categories'),
             leading: const Icon(Icons.category),
             trailing: const Icon(Icons.chevron_right),
@@ -245,6 +201,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               await backupService.importData(context);
             },
           ),
+          ListTile(
+            title: const Text('Delete All Data'),
+            leading: const Icon(Icons.delete_forever),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _deleteAllData(context),
+          ),
         ],
       ),
     );
@@ -268,6 +230,61 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       });
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Name updated!')));
+    }
+  }
+
+  Future<void> _deleteAllData(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete All Data?'),
+        content: const Text(
+            'Are you sure you want to delete all your financial data? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+          if (confirm == true) {
+          final database = await DatabaseHelper.instance.database;
+          await database.delete(DatabaseHelper.expensesTable);
+          await database.delete(DatabaseHelper.incomeTable);
+          await database.delete(DatabaseHelper.categoriesTable);
+          await database.delete(DatabaseHelper.budgetsTable);
+          await database.delete(DatabaseHelper.emisTable);
+          await database.delete(DatabaseHelper.subscriptionsTable);
+          await database.delete(DatabaseHelper.assetsTable);
+      final prefs = ref.read(sharedPreferencesProvider);
+      await prefs.clear(); // Clear all shared preferences
+
+      // Optionally, reset providers to their initial state
+      ref.invalidate(currentMonthSpendingProvider);
+      ref.invalidate(upcomingEmisThisWeekCountProvider);
+      ref.invalidate(last6MonthsSpendingProvider);
+      ref.invalidate(next3UpcomingEmisProvider);
+      ref.invalidate(expenseListProvider);
+      ref.invalidate(incomeListProvider);
+      ref.invalidate(categoryListProvider);
+      ref.invalidate(budgetListProvider);
+      ref.invalidate(emiListProvider);
+      ref.invalidate(subscriptionListProvider);
+      ref.invalidate(assetListProvider);
+      ref.invalidate(userNameProvider);
+      ref.invalidate(currencyProvider);
+      ref.invalidate(themeProvider);
+      ref.invalidate(accentColorProvider);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All data deleted!')),
+      );
     }
   }
 }

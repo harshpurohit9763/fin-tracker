@@ -1,14 +1,38 @@
 import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
 
 class AppFormatters {
   // Currency Formatter
   static String formatCurrency(double amount, String currency) {
-    final format = NumberFormat.simpleCurrency(
-      locale: 'en_US', // You can customize this further if needed
-      name: currency,
+    String abbreviation;
+    switch (currency) {
+      case 'USD':
+        abbreviation = 'USD';
+        break;
+      case 'EUR':
+        abbreviation = 'EUR';
+        break;
+      case 'GBP':
+        abbreviation = 'GBP';
+        break;
+      case 'JPY':
+        abbreviation = 'JPY';
+        break;
+      case 'INR':
+        abbreviation = 'Rs';
+        break;
+      default:
+        abbreviation = currency; // Fallback to currency code if not found
+    }
+
+    final numberFormat = NumberFormat.currency(
+      locale: 'en_US', // Use a consistent locale for number formatting
+      symbol: '', // No symbol, we'll add abbreviation manually
       decimalDigits: 2,
     );
-    return format.format(amount);
+
+    final formattedAmount = numberFormat.format(amount);
+    return '$formattedAmount $abbreviation';
   }
 
   // Date Formatter (e.g., Nov 7, 2025)

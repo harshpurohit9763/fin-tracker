@@ -23,6 +23,7 @@ class DataBackupService {
     DatabaseHelper.budgetsTable,
     DatabaseHelper.assetsTable,
     DatabaseHelper.subscriptionsTable,
+    DatabaseHelper.incomeTable,
   ];
 
   Future<void> exportData(BuildContext context) async {
@@ -86,7 +87,7 @@ class DataBackupService {
           return AlertDialog(
             title: const Text('Import Data'),
             content: const Text(
-                'Importing data will overwrite all your current data. Are you sure you want to proceed?'),
+                'Importing data will merge with your current data. Existing entries will be updated, and new entries will be added. Are you sure you want to proceed?'),
             actions: <Widget>[
               TextButton(
                 child: const Text('Cancel'),
@@ -135,39 +136,82 @@ class DataBackupService {
 
       final Map<String, dynamic> backupData = jsonDecode(jsonString);
 
-      // Clear SharedPreferences
-      await prefs.clear();
       final Map<String, dynamic> prefsData = backupData['preferences'];
       for (var entry in prefsData.entries) {
-        if (entry.value is bool) {
-          await prefs.setBool(entry.key, entry.value);
-        } else if (entry.value is int) {
-          await prefs.setInt(entry.key, entry.value);
-        } else if (entry.value is double) {
-          await prefs.setDouble(entry.key, entry.value);
-        } else if (entry.value is String) {
-          await prefs.setString(entry.key, entry.value);
-        } else if (entry.value is List) {
-          // Handle List<String>
-          await prefs.setStringList(entry.key, entry.value.cast<String>());
+        // Only update if the imported value is not null and not an empty string (for String types)
+        if (entry.value != null && !(entry.value is String && (entry.value as String).isEmpty)) {
+          if (entry.value is bool) {
+            await prefs.setBool(entry.key, entry.value);
+          } else if (entry.value is int) {
+            await prefs.setInt(entry.key, entry.value);
+          } else if (entry.value is double) {
+            await prefs.setDouble(entry.key, entry.value);
+          } else if (entry.value is String) {
+            await prefs.setString(entry.key, entry.value);
+          } else if (entry.value is List) {
+            // Handle List<String>
+            await prefs.setStringList(entry.key, entry.value.cast<String>());
+          }
         }
       }
 
-      // Clear and insert SQLite data for all tables
+      // Import SQLite data for all tables
       final Map<String, dynamic> dbImportData = backupData['database'];
       for (String tableName in _tableNames) {
-        await database.delete(tableName); // Clear existing data
         if (dbImportData.containsKey(tableName)) {
+          // Get current table columns to handle schema changes
+          final List<Map<String, dynamic>> tableInfo =
+              await database.rawQuery('PRAGMA table_info($tableName)');
+          final List<String> columnNames =
+              tableInfo.map((e) => e['name'] as String).toList();
+
           List<dynamic> rows = dbImportData[tableName];
           for (var row in rows) {
-            // Remove 'id' if it's auto-incremented, as inserting with an ID
-            // might cause conflicts or unexpected behavior.
-            // For simplicity, assuming IDs are auto-incremented and can be
-            // regenerated on import.
-            Map<String, dynamic> rowWithoutId = Map.from(row);
-            rowWithoutId.remove('id');
-            await database.insert(tableName, rowWithoutId,
-                conflictAlgorithm: ConflictAlgorithm.replace);
+            Map<String, dynamic> importedRow = Map.from(row);
+
+            // Filter out columns not present in the current table schema
+            importedRow.removeWhere((key, value) => !columnNames.contains(key));
+
+            if (importedRow.containsKey('id') && importedRow['id'] != null) {
+              final int id = importedRow['id'];
+              // Check if record with this ID already exists
+              final List<Map<String, dynamic>> existingRecords =
+                  await database.query(
+                tableName,
+                where: 'id = ?',
+                whereArgs: [id],
+              );
+
+              if (existingRecords.isNotEmpty) {
+                // Merge existing data with imported data
+                Map<String, dynamic> existingRecord = existingRecords.first;
+                Map<String, dynamic> mergedData = Map.from(existingRecord);
+
+                importedRow.forEach((key, value) {
+                  // Only update if the imported value is not null and not empty (for String)
+                  if (value != null && !(value is String && value.isEmpty)) {
+                    mergedData[key] = value;
+                  }
+                });
+                await database.update(
+                  tableName,
+                  mergedData,
+                  where: 'id = ?',
+                  whereArgs: [id],
+                  conflictAlgorithm: ConflictAlgorithm.replace,
+                );
+              } else {
+                // If ID exists in imported data but not in current DB, insert it
+                await database.insert(tableName, importedRow,
+                    conflictAlgorithm: ConflictAlgorithm.replace);
+              }
+            } else {
+              // If no 'id' in imported row, it's a new record, insert it
+              // Remove 'id' key if it exists but is null, to let DB auto-assign
+              importedRow.remove('id');
+              await database.insert(tableName, importedRow,
+                  conflictAlgorithm: ConflictAlgorithm.replace);
+            }
           }
         }
       }
@@ -176,18 +220,37 @@ class DataBackupService {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Data imported successfully from $filePath')),
         );
-      }
 
-      // Reload app state - this is crucial.
-      // A common way is to navigate to the initial screen and remove all previous routes.
-      // This will effectively restart the app's data loading process.
-      if (context.mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-              builder: (context) =>
-                  const MainNavigation()), // Replace with your app's initial screen
-          (Route<dynamic> route) => false,
+        final shouldRestart = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Import Complete'),
+            content: const Text(
+                'Data has been imported successfully. Please restart the application for changes to take full effect.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Later'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Restart Now'),
+              ),
+            ],
+          ),
         );
+
+        if (shouldRestart == true) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const MainNavigation()),
+            (Route<dynamic> route) => false,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Import successful. Restart when ready.')),
+          );
+        }
       }
     } catch (e) {
       if (context.mounted) {

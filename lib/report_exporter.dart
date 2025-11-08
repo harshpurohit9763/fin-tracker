@@ -204,10 +204,11 @@ class ReportExporter {
                 style: pw.TextStyle(
                     fontSize: 20, fontWeight: pw.FontWeight.bold))),
         build: (pw.Context context) {
+          final categoryTotals = _aggregateExpensesByCategory(expenses);
           return [
             sectionHeader("Director's Report"),
             pw.SizedBox(height: 16),
-            placeholderText(),
+            _buildCategorySpendingChart(categoryTotals, currency, theme),
             pw.SizedBox(height: 24),
             sectionHeader('Social & Environmental Matters'),
             pw.SizedBox(height: 16),
@@ -397,6 +398,72 @@ class ReportExporter {
         3: pw.Alignment.center,
         4: pw.Alignment.centerRight,
       },
+    );
+  }
+
+  static Map<String, double> _aggregateExpensesByCategory(
+      List<Expense> expenses) {
+    final Map<String, double> categoryTotals = {};
+    for (var expense in expenses) {
+      categoryTotals.update(
+        expense.category,
+        (value) => value + expense.amount,
+        ifAbsent: () => expense.amount,
+      );
+    }
+    return categoryTotals;
+  }
+
+  static pw.Widget _buildCategorySpendingChart(
+      Map<String, double> categoryTotals, String currency, pw.ThemeData theme) {
+    if (categoryTotals.isEmpty) {
+      return pw.Text('No category spending data for this period.');
+    }
+
+    final sortedCategories = categoryTotals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value)); // Sort descending
+
+    final maxSpending =
+        sortedCategories.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Spending by Category',
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14)),
+        pw.SizedBox(height: 10),
+        ...sortedCategories.map(
+          (entry) {
+            final category = entry.key;
+            final amount = entry.value;
+            final barWidth = (amount / maxSpending) * 200; // Max bar width 200
+
+            return pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(vertical: 4),
+              child: pw.Row(
+                children: [
+                  pw.SizedBox(
+                    width: 100,
+                    child: pw.Text(category, style: theme.defaultTextStyle),
+                  ),
+                  pw.SizedBox(width: 10),
+                  pw.Container(
+                    height: 10,
+                    width: barWidth,
+                    decoration: const pw.BoxDecoration(
+                      color: mustardYellow,
+                      borderRadius: pw.BorderRadius.all(pw.Radius.circular(2)),
+                    ),
+                  ),
+                  pw.SizedBox(width: 10),
+                  pw.Text(AppFormatters.formatCurrency(amount, currency),
+                      style: theme.defaultTextStyle),
+                ],
+              ),
+            );
+          },
+        ).toList(),
+      ],
     );
   }
 }
