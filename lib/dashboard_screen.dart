@@ -268,7 +268,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     Text('Monthly Spending Trend (Last 6 Months)',
                         style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 16),
-                    const SizedBox(height: 250, child: MonthlyTrendChart()),
+                    const SizedBox(height: 300, child: MonthlyTrendChart()),
                     const SizedBox(height: 24),
 
                     // EMI Due Panel

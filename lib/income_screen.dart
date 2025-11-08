@@ -38,7 +38,33 @@ class IncomeScreen extends ConsumerWidget {
                   );
                 },
                 onDelete: () {
-                  ref.read(incomeListProvider.notifier).deleteIncome(income.id!);
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: const Text('Confirm Deletion'),
+                        content: const Text(
+                            'Are you sure you want to delete this income entry?'),
+                        actions: <Widget>[
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(); // Dismiss the dialog
+                            },
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              ref
+                                  .read(incomeListProvider.notifier)
+                                  .deleteIncome(income.id!);
+                              Navigator.of(context).pop(); // Dismiss the dialog
+                            },
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
                 },
               );
             },
