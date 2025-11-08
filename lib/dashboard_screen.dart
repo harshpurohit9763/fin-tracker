@@ -11,6 +11,8 @@ import 'package:personal_finance/dashboard_provider.dart';
 import 'package:personal_finance/emi_provider.dart';
 import 'package:personal_finance/matteric_card.dart';
 import 'package:personal_finance/monthly_trend.dart';
+import 'package:personal_finance/overlapping_card_view.dart';
+import 'package:personal_finance/flippable_emi_card.dart';
 import 'package:personal_finance/shared_preferences_provider.dart';
 import 'package:personal_finance/upcomming_emi.dart';
 import 'package:personal_finance/upcoming_emi_card.dart';
@@ -59,7 +61,10 @@ class DashboardScreen extends ConsumerWidget {
         child: CustomScrollView(
           slivers: [
             nextEmiAsync.when(
-              data: (emis) {
+              data: (allEmis) {
+                // Only show unpaid EMIs
+                final emis =
+                    allEmis.where((e) => e.tenureRemainingMonths > 0).toList();
                 final hasEmi = emis.isNotEmpty;
                 void navigateToProfile() {
                   Navigator.push(
@@ -73,7 +78,10 @@ class DashboardScreen extends ConsumerWidget {
                   pinned: true,
                   floating: false,
                   expandedHeight: hasEmi
-                      ? MediaQuery.of(context).size.height * 0.25
+                      ?
+                      // Calculate height: card height + overlap for other cards
+                      (MediaQuery.of(context).size.width - 48) / 1.586 +
+                          (emis.length * 40)
                       : kToolbarHeight,
                   flexibleSpace: FlexibleSpaceBar(
                     titlePadding:
@@ -98,11 +106,15 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                           ),
                     background: hasEmi
-                        ? UpcomingEmiCard(
-                            emi: emis.first,
-                            currency: currency,
-                            userName: userName,
-                            onProfileTap: navigateToProfile,
+                        ? OverlappingCardView(
+                            children: emis.map((emi) {
+                              return FlippableEmiCard(
+                                emi: emi,
+                                currency: currency,
+                                userName: userName,
+                                onProfileTap: navigateToProfile,
+                              );
+                            }).toList(),
                           )
                         : null,
                   ),
