@@ -1,0 +1,560 @@
+{
+  "incomes": [
+    {
+      "amount": 48700.0,
+      "description": "Income 1",
+      "source": "Harsh",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "isMonthly": true
+    },
+    {
+      "amount": 8000.0,
+      "description": "Income 2",
+      "source": "Rental of house 2",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "isMonthly": true
+    },
+    {
+      "amount": 20000.0,
+      "description": "Income 3",
+      "source": "Sanjay",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "isMonthly": true
+    },
+    {
+      "amount": -1001.0,
+      "description": "Addon Income",
+      "source": "Unknown",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "isMonthly": true
+    },
+    {
+      "amount": 501.0,
+      "description": "Banva to Seva ram guchiya",
+      "source": "Gift/Transfer Received",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "isMonthly": false
+    },
+    {
+      "amount": 200.0,
+      "description": "Tarachand ji for home inogration",
+      "source": "Gift/Transfer Received",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "isMonthly": false
+    },
+    {
+      "amount": 1000.0,
+      "description": "Sanjju",
+      "source": "Gift/Transfer Received",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "isMonthly": false
+    }
+  ],
+  "expenses": [
+    {
+      "amount": 37800.0,
+      "category": "Housing",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Mortgage or rent"
+    },
+    {
+      "amount": 700.0,
+      "category": "Communication",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Phone Number"
+    },
+    {
+      "amount": 1200.0,
+      "category": "Utilities",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Electricity"
+    },
+    {
+      "amount": 800.0,
+      "category": "Utilities",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Gas"
+    },
+    {
+      "amount": 1145.0,
+      "category": "Housing",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Maintenance or repairs house 2"
+    },
+    {
+      "amount": 450.0,
+      "category": "Groceries",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Rashan"
+    },
+    {
+      "amount": 100.0,
+      "category": "Groceries",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Vegitables"
+    },
+    {
+      "amount": 469.0,
+      "category": "Groceries",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Milk / Buttermilk"
+    },
+    {
+      "amount": 34.0,
+      "category": "Groceries",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Fast food"
+    },
+    {
+      "amount": 130.0,
+      "category": "Groceries",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "bread and others"
+    },
+    {
+      "amount": 749.5,
+      "category": "Subscriptions",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Amazon Prime"
+    },
+    {
+      "amount": 110.0,
+      "category": "Transportation",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Rapido"
+    },
+    {
+      "amount": 80.0,
+      "category": "Transportation",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Metro"
+    },
+    {
+      "amount": 214.92,
+      "category": "Transportation",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Train Pass"
+    },
+    {
+      "amount": 50.0,
+      "category": "Personal Care",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "haircut and shaving"
+    },
+    {
+      "amount": 511.0,
+      "category": "Transportation",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Rapido"
+    },
+    {
+      "amount": 40.0,
+      "category": "Travel",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Ticket"
+    },
+    {
+      "amount": 1901.0,
+      "category": "Gifts/Transfers",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Given to others"
+    },
+    {
+      "amount": 303.0,
+      "category": "Miscellaneous",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Others"
+    },
+    {
+      "amount": 400.0,
+      "category": "Gifts/Transfers",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Annu kaka"
+    },
+    {
+      "amount": 200.0,
+      "category": "Gifts/Transfers",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Jathi bua"
+    },
+    {
+      "amount": 100.0,
+      "category": "Gifts/Transfers",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Gudiya mama and suresh and kailash mama"
+    },
+    {
+      "amount": 200.0,
+      "category": "Gifts/Transfers",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Murli Maraj"
+    },
+    {
+      "amount": 22.0,
+      "category": "Transportation",
+      "date": 1730659380000,
+      "monthYear": "2025-11",
+      "description": "Travel from Gokul Shappire to Murli Uncle House for Dad"
+    },
+    {
+      "amount": 22.0,
+      "category": "Transportation",
+      "date": 1730742180000,
+      "monthYear": "2025-11",
+      "description": "Travel from Gokul Shappire to Murli Uncle House for Dad"
+    },
+    {
+      "amount": 80.0,
+      "category": "Transportation",
+      "date": 1730742180000,
+      "monthYear": "2025-11",
+      "description": "Travel from Murli Uncle House to Gokul Shappire for Dad And Guests"
+    },
+    {
+      "amount": 85.0,
+      "category": "Transportation",
+      "date": 1730748060000,
+      "monthYear": "2025-11",
+      "description": "Travel from Gokul Shappire to Murli Uncle House for Dad And Guests"
+    },
+    {
+      "amount": 24.0,
+      "category": "Transportation",
+      "date": 1730748960000,
+      "monthYear": "2025-11",
+      "description": "Travel from Murli Uncle House to Gokul Shappire for Dad"
+    },
+    {
+      "amount": 70.0,
+      "category": "Transportation",
+      "date": 1730770440000,
+      "monthYear": "2025-11",
+      "description": "Travel from Gokul Shappire to Murli Uncle House for Mom and Dad"
+    },
+    {
+      "amount": 65.0,
+      "category": "Transportation",
+      "date": 1730775720000,
+      "monthYear": "2025-11",
+      "description": "Travel from Murli Uncle House to Gokul Shappire for Mom and Dad"
+    },
+    {
+      "amount": 20.0,
+      "category": "Transportation",
+      "date": 1730832600000,
+      "monthYear": "2025-11",
+      "description": "Travel from Gokul Shappire to Station for Dad"
+    },
+    {
+      "amount": 20.0,
+      "category": "Transportation",
+      "date": 1730833500000,
+      "monthYear": "2025-11",
+      "description": "Travel from Station to Gokul Shappire for Dad"
+    },
+    {
+      "amount": 20.0,
+      "category": "Transportation",
+      "date": 1731004800000,
+      "monthYear": "2025-11",
+      "description": "Travel from Gokul Shappire to Station for Dad"
+    },
+    {
+      "amount": 20.0,
+      "category": "Transportation",
+      "date": 1731004800000,
+      "monthYear": "2025-11",
+      "description": "Travel from Station to Gokul Shappire for Dad"
+    },
+    {
+      "amount": 39.0,
+      "category": "Transportation",
+      "date": 1731004800000,
+      "monthYear": "2025-11",
+      "description": "Travel from mira road station to Tara chand new house for Dad"
+    },
+    {
+      "amount": 24.0,
+      "category": "Transportation",
+      "date": 1731091200000,
+      "monthYear": "2025-11",
+      "description": "Travel from gokul shappire to station for bade papa"
+    },
+    {
+      "amount": 20.0,
+      "category": "Travel",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Dad Ticket"
+    },
+    {
+      "amount": 20.0,
+      "category": "Travel",
+      "date": 1731004800000,
+      "monthYear": "2025-11",
+      "description": "Dad Ticket"
+    },
+    {
+      "amount": 380.0,
+      "category": "Groceries",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "gehu"
+    },
+    {
+      "amount": 70.0,
+      "category": "Groceries",
+      "date": 1731090600000,
+      "monthYear": "2025-11",
+      "description": "Gehu pisai"
+    },
+    {
+      "amount": 60.0,
+      "category": "Groceries",
+      "date": 1730582400000,
+      "monthYear": "2025-11",
+      "description": "milk"
+    },
+    {
+      "amount": 60.0,
+      "category": "Groceries",
+      "date": 1730668800000,
+      "monthYear": "2025-11",
+      "description": "milk"
+    },
+    {
+      "amount": 60.0,
+      "category": "Groceries",
+      "date": 1730755200000,
+      "monthYear": "2025-11",
+      "description": "milk"
+    },
+    {
+      "amount": 60.0,
+      "category": "Groceries",
+      "date": 1730841600000,
+      "monthYear": "2025-11",
+      "description": "milk"
+    },
+    {
+      "amount": 60.0,
+      "category": "Groceries",
+      "date": 1730928000000,
+      "monthYear": "2025-11",
+      "description": "milk"
+    },
+    {
+      "amount": 60.0,
+      "category": "Groceries",
+      "date": 1731014400000,
+      "monthYear": "2025-11",
+      "description": "milk"
+    },
+    {
+      "amount": 32.0,
+      "category": "Groceries",
+      "date": 1730755200000,
+      "monthYear": "2025-11",
+      "description": "buttermilk"
+    },
+    {
+      "amount": 17.0,
+      "category": "Groceries",
+      "date": 1731014400000,
+      "monthYear": "2025-11",
+      "description": "buttermilk"
+    },
+    {
+      "amount": 60.0,
+      "category": "Groceries",
+      "date": 1731100800000,
+      "monthYear": "2025-11",
+      "description": "milk"
+    },
+    {
+      "amount": 100.0,
+      "category": "Groceries",
+      "date": 1730755200000,
+      "monthYear": "2025-11",
+      "description": "Sabji"
+    },
+    {
+      "amount": 30.0,
+      "category": "Groceries",
+      "date": 1731100800000,
+      "monthYear": "2025-11",
+      "description": "Adharak"
+    },
+    {
+      "amount": 30.0,
+      "category": "Groceries",
+      "date": 1731100800000,
+      "monthYear": "2025-11",
+      "description": "biscut"
+    },
+    {
+      "amount": 20.0,
+      "category": "Groceries",
+      "date": 1731100800000,
+      "monthYear": "2025-11",
+      "description": "chips"
+    },
+    {
+      "amount": 20.0,
+      "category": "Personal Care",
+      "date": 1731100800000,
+      "monthYear": "2025-11",
+      "description": "shampoo"
+    },
+    {
+      "amount": 233.0,
+      "category": "Personal Care",
+      "date": 1731100800000,
+      "monthYear": "2025-11",
+      "description": "Lice comb"
+    }
+  ],
+  "emis": [
+    {
+      "loanName": "Axis Bank Encash",
+      "bankName": null,
+      "monthlyEmiAmount": 8616.0,
+      "interestRate": 10.8,
+      "totalTenureMonths": 48,
+      "tenureRemainingMonths": 44,
+      "nextDueDate": 1731090600000
+    },
+    {
+      "loanName": "sbi Encash",
+      "bankName": null,
+      "monthlyEmiAmount": 5846.0,
+      "interestRate": 10.8,
+      "totalTenureMonths": 24,
+      "tenureRemainingMonths": 20,
+      "nextDueDate": 1731090600000
+    },
+    {
+      "loanName": "Sbi Credit Card",
+      "bankName": null,
+      "monthlyEmiAmount": 1847.0,
+      "interestRate": 13.99,
+      "totalTenureMonths": 36,
+      "tenureRemainingMonths": 32,
+      "nextDueDate": 1731090600000
+    },
+    {
+      "loanName": "Icici Credit Card 1",
+      "bankName": null,
+      "monthlyEmiAmount": 1016.0,
+      "interestRate": 13.99,
+      "totalTenureMonths": 24,
+      "tenureRemainingMonths": 19,
+      "nextDueDate": 1731090600000
+    },
+    {
+      "loanName": "Icici Credit Card 2",
+      "bankName": null,
+      "monthlyEmiAmount": 1219.0,
+      "interestRate": 13.99,
+      "totalTenureMonths": 24,
+      "tenureRemainingMonths": 19,
+      "nextDueDate": 1731090600000
+    },
+    {
+      "loanName": "SBI Top-UP Loan",
+      "bankName": null,
+      "monthlyEmiAmount": 4641.0,
+      "interestRate": 8.55,
+      "totalTenureMonths": 357,
+      "tenureRemainingMonths": 356,
+      "nextDueDate": 1731090600000
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "Communication",
+      "type": "Need"
+    },
+    {
+      "id": 2,
+      "name": "Gifts/Transfers",
+      "type": "Want"
+    },
+    {
+      "id": 3,
+      "name": "Groceries",
+      "type": "Need"
+    },
+    {
+      "id": 4,
+      "name": "Health",
+      "type": "Need"
+    },
+    {
+      "id": 5,
+      "name": "Housing",
+      "type": "Need"
+    },
+    {
+      "id": 6,
+      "name": "Miscellaneous",
+      "type": "Want"
+    },
+    {
+      "id": 7,
+      "name": "Personal Care",
+      "type": "Want"
+    },
+    {
+      "id": 8,
+      "name": "Subscriptions",
+      "type": "Want"
+    },
+    {
+      "id": 9,
+      "name": "Transportation",
+      "type": "Need"
+    },
+    {
+      "id": 10,
+      "name": "Travel",
+      "type": "Want"
+    },
+    {
+      "id": 11,
+      "name": "Utilities",
+      "type": "Need"
+    }
+  ]
+}

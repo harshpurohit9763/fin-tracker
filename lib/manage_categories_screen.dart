@@ -181,6 +181,7 @@ class _ManageCategoriesScreenState
   void _showAddCategoryDialog(BuildContext context) {
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController();
+    CategoryType selectedType = CategoryType.Want; // Default value
 
     showDialog(
       context: context,
@@ -189,16 +190,35 @@ class _ManageCategoriesScreenState
           title: const Text('Add New Category'),
           content: Form(
             key: formKey,
-            child: TextFormField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Category Name'),
-              autofocus: true,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a category name';
-                }
-                return null;
-              },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Category Name'),
+                  autofocus: true,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a category name';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<CategoryType>(
+                  value: selectedType,
+                  decoration: const InputDecoration(labelText: 'Category Type'),
+                  items: CategoryType.values
+                      .map((type) =>
+                          DropdownMenuItem(value: type, child: Text(type.name)))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      selectedType = value;
+                    }
+                  },
+                ),
+              ],
             ),
           ),
           actions: [
@@ -209,8 +229,10 @@ class _ManageCategoriesScreenState
             ElevatedButton(
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
-                  final newCategory =
-                      Category(name: nameController.text.trim());
+                  final newCategory = Category(
+                    name: nameController.text.trim(),
+                    type: selectedType, // Include the selected type
+                  );
                   try {
                     await ref
                         .read(categoryListProvider.notifier)
