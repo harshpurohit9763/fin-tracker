@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 class DatabaseHelper {
   // Table and column names
   static const String dbName = 'expense_tracker.db';
-  static const int dbVersion = 1;
+  static const int dbVersion = 2;
 
   // Expenses Table
   static const String expensesTable = 'expenses';
@@ -18,6 +18,16 @@ class DatabaseHelper {
   static const String colDate = 'date'; // Unix Timestamp
   static const String colMonthYear = 'month_year'; // "YYYY-MM"
   static const String colDescription = 'description';
+
+  // Income Table
+  static const String incomeTable = 'income';
+  static const String colIncomeId = 'id';
+  static const String colIncomeAmount = 'amount';
+  static const String colIncomeDescription = 'description';
+  static const String colIncomeSource = 'source'; // New column for income source
+  static const String colIncomeDate = 'date'; // Unix Timestamp
+  static const String colIncomeMonthYear = 'month_year'; // "YYYY-MM"
+  static const String colIncomeIsMonthly = 'is_monthly'; // 0 for false, 1 for true
 
   // Categories Table
   static const String categoriesTable = 'categories';
@@ -78,7 +88,16 @@ class DatabaseHelper {
       path,
       version: dbVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade, // Add onUpgrade callback
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Migrate from version 1 to 2
+      await db.execute(
+          'ALTER TABLE $incomeTable ADD COLUMN $colIncomeSource TEXT;');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -91,6 +110,19 @@ class DatabaseHelper {
         $colDate INTEGER NOT NULL,
         $colMonthYear TEXT NOT NULL,
         $colDescription TEXT
+      )
+    ''');
+
+    // Create Income Table
+    await db.execute('''
+      CREATE TABLE $incomeTable (
+        $colIncomeId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colIncomeAmount REAL NOT NULL,
+        $colIncomeDescription TEXT,
+        $colIncomeSource TEXT,
+        $colIncomeDate INTEGER NOT NULL,
+        $colIncomeMonthYear TEXT NOT NULL,
+        $colIncomeIsMonthly INTEGER NOT NULL DEFAULT 0
       )
     ''');
 

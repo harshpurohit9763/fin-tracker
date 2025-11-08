@@ -18,6 +18,7 @@ import 'package:personal_finance/tutorial_overlay.dart';
 import 'package:personal_finance/upcomming_emi.dart';
 import 'package:personal_finance/upcoming_emi_card.dart';
 import 'package:personal_finance/profile_screen.dart';
+import 'package:personal_finance/add_income_screen.dart';
 
 String _getGreeting() {
   final hour = DateTime.now().hour;
@@ -38,12 +39,13 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  bool _showFabOptions = false;
   // Keys for tutorial
-  final GlobalKey _profileButtonKey = GlobalKey();
-  final GlobalKey _metricsCardKey = GlobalKey();
-  final GlobalKey _monthlyTrendKey = GlobalKey();
-  final GlobalKey _toolsGridKey = GlobalKey();
-  final GlobalKey _fabKey = GlobalKey();
+  final GlobalKey<State<StatefulWidget>> _profileButtonKey = GlobalKey<State<StatefulWidget>>();
+  final GlobalKey<State<StatefulWidget>> _metricsCardKey = GlobalKey<State<StatefulWidget>>();
+  final GlobalKey<State<StatefulWidget>> _monthlyTrendKey = GlobalKey<State<StatefulWidget>>();
+  final GlobalKey<State<StatefulWidget>> _toolsGridKey = GlobalKey<State<StatefulWidget>>();
+  final GlobalKey<State<StatefulWidget>> _fabKey = GlobalKey<State<StatefulWidget>>();
 
   @override
   void initState() {
@@ -388,16 +390,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: _fabKey,
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddExpenseScreen()),
-          );
-        },
-        label: const Text('Add Expense'),
-        icon: const Icon(Icons.add),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (_showFabOptions) ...[
+            FloatingActionButton.extended(
+              heroTag: 'addExpenseFab',
+              onPressed: () {
+                setState(() {
+                  _showFabOptions = false;
+                });
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AddExpenseScreen()),
+                );
+              },
+              label: const Text('Add Expense'),
+              icon: const Icon(Icons.remove),
+            ),
+            const SizedBox(height: 10),
+          ],
+          FloatingActionButton(
+            key: _fabKey,
+            onPressed: () {
+              setState(() {
+                _showFabOptions = !_showFabOptions;
+              });
+            },
+            child: Icon(_showFabOptions ? Icons.close : Icons.add),
+          ),
+        ],
       ),
     );
   }
