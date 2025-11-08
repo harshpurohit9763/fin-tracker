@@ -30,4 +30,12 @@ class AppFormatters {
   static int dateTimeToTimestamp(DateTime date) {
     return date.millisecondsSinceEpoch;
   }
+
+  // Get month name from month number (1-12)
+  static String getMonthName(int monthNumber) {
+    if (monthNumber < 1 || monthNumber > 12) {
+      throw ArgumentError('Month number must be between 1 and 12');
+    }
+    return DateFormat.MMMM().format(DateTime(2000, monthNumber));
+  }
 }

@@ -65,6 +65,30 @@ final expenseListProvider =
   return ExpenseListNotifier(ref);
 });
 
+// Provides the currently selected month and year for filtering expenses
+final selectedMonthYearProvider = StateProvider<DateTime>((ref) {
+  final now = DateTime.now();
+  return DateTime(now.year, now.month); // Default to current month and year
+});
+
+// Provides a filtered list of expenses based on the selected month and year
+final filteredExpenseListProvider =
+    FutureProvider.autoDispose<List<Expense>>((ref) async {
+  final allExpensesAsync = ref.watch(expenseListProvider);
+  final selectedMonthYear = ref.watch(selectedMonthYearProvider);
+
+  return allExpensesAsync.when(
+    data: (allExpenses) {
+      return allExpenses.where((expense) {
+        return expense.date.year == selectedMonthYear.year &&
+            expense.date.month == selectedMonthYear.month;
+      }).toList();
+    },
+    loading: () => [], // Return an empty list while loading
+    error: (e, s) => throw e, // Propagate the error
+  );
+});
+
 class ExpenseListNotifier extends StateNotifier<AsyncValue<List<Expense>>> {
   final Ref _ref;
   late final ExpenseRepository _repository;

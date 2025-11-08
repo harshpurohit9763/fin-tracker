@@ -11,10 +11,53 @@ class ExpenseListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currency = ref.watch(currencyProvider);
-    final expensesAsyncValue = ref.watch(expenseListProvider);
+    final expensesAsyncValue = ref.watch(filteredExpenseListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('All Expenses')),
+      appBar: AppBar(
+        title: const Text('All Expenses'),
+        actions: [
+          // Year Dropdown
+          DropdownButton<int>(
+            value: ref.watch(selectedMonthYearProvider).year,
+            items: List.generate(
+              6, // Current year and 5 previous years
+              (index) => DateTime.now().year - index,
+            ).map((year) {
+              return DropdownMenuItem(
+                value: year,
+                child: Text(year.toString()),
+              );
+            }).toList(),
+            onChanged: (year) {
+              if (year != null) {
+                final currentSelection = ref.read(selectedMonthYearProvider);
+                ref.read(selectedMonthYearProvider.notifier).state =
+                    DateTime(year, currentSelection.month);
+              }
+            },
+          ),
+          const SizedBox(width: 10),
+          // Month Dropdown
+          DropdownButton<int>(
+            value: ref.watch(selectedMonthYearProvider).month,
+            items: List.generate(12, (index) => index + 1).map((month) {
+              return DropdownMenuItem(
+                value: month,
+                child: Text(AppFormatters.getMonthName(month)),
+              );
+            }).toList(),
+            onChanged: (month) {
+              if (month != null) {
+                final currentSelection = ref.read(selectedMonthYearProvider);
+                ref.read(selectedMonthYearProvider.notifier).state =
+                    DateTime(currentSelection.year, month);
+              }
+            },
+          ),
+          const SizedBox(width: 10),
+        ],
+      ),
       body: expensesAsyncValue.when(
         data: (expenses) {
           if (expenses.isEmpty) {

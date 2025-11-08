@@ -11,7 +11,7 @@ final reportRepositoryProvider = Provider<ReportRepository>((ref) {
 });
 
 // Defines the type of date range for the report
-enum ReportDateRangeType { last7Days, last30Days, thisMonth, custom }
+enum ReportDateRangeType { last7Days, last30Days, thisMonth, custom, monthly }
 
 // Holds the currently selected date range type
 final reportDateRangeTypeProvider =
@@ -44,6 +44,14 @@ final selectedRangeTotalProvider =
   return repository.getTotalForDateRange(range.start, range.end);
 });
 
+// Provider for monthly breakdown data
+final monthlyBreakdownProvider =
+    FutureProvider.autoDispose<Map<String, double>>((ref) async {
+  final range = ref.watch(currentDateRangeProvider);
+  final repository = ref.watch(reportRepositoryProvider);
+  return repository.getMonthlySpendingForRange(range.start, range.end);
+});
+
 // A derived provider that computes the current DateTimeRange based on the selected type
 final currentDateRangeProvider = Provider<DateTimeRange>((ref) {
   final type = ref.watch(reportDateRangeTypeProvider);
@@ -58,6 +66,9 @@ final currentDateRangeProvider = Provider<DateTimeRange>((ref) {
     case ReportDateRangeType.custom:
       return ref.watch(customDateRangeProvider) ??
           DateTimeRange(start: now, end: now);
+    case ReportDateRangeType.monthly:
+      final sixMonthsAgo = DateTime(now.year, now.month - 5, 1);
+      return DateTimeRange(start: sixMonthsAgo, end: now);
     case ReportDateRangeType.thisMonth:
     default:
       final firstDayOfMonth = DateTime(now.year, now.month, 1);

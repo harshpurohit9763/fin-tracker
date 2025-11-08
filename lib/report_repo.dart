@@ -63,6 +63,24 @@ class ReportRepository {
     };
   }
 
+  // Get monthly spending for a given date range
+  Future<Map<String, double>> getMonthlySpendingForRange(
+      DateTime start, DateTime end) async {
+    Map<String, double> monthlyTotals = {};
+
+    DateTime currentMonth = DateTime(start.year, start.month, 1);
+    while (currentMonth.isBefore(end) ||
+        currentMonth.isAtSameMomentAs(DateTime(end.year, end.month, 1))) {
+      final endOfMonth = DateTime(currentMonth.year, currentMonth.month + 1, 0);
+      final monthYear = AppFormatters.formatMonthYear(currentMonth);
+      final total = await getTotalForDateRange(currentMonth, endOfMonth);
+      monthlyTotals[monthYear] = total;
+
+      currentMonth = DateTime(currentMonth.year, currentMonth.month + 1, 1);
+    }
+    return monthlyTotals;
+  }
+
   // Get daily spending trend for a specific date range
   Future<Map<DateTime, double>> getDailySpending(
       DateTime start, DateTime end) async {
