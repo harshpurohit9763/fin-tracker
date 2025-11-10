@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/emi_model.dart';
 import 'package:personal_finance/emi_repo.dart';
+import 'package:personal_finance/expense_model.dart';
+import 'package:personal_finance/expense_provider.dart';
 
 // Provides the repository instance
 final emiRepositoryProvider = Provider<EmiRepository>((ref) {
@@ -66,6 +68,15 @@ class EmiListNotifier extends StateNotifier<AsyncValue<List<Emi>>> {
   Future<void> markEmiAsPaid(Emi emi) async {
     try {
       final updatedEmi = await _repository.markEmiAsPaid(emi);
+      final now = DateTime.now();
+      final expense = Expense(
+        amount: emi.monthlyEmiAmount,
+        category: 'EMI',
+        date: now,
+        monthYear: "${now.year}-${now.month.toString().padLeft(2, '0')}",
+        description: "${emi.loanName} EMI",
+      );
+      await _ref.read(expenseListProvider.notifier).addExpense(expense);
       await _fetchEmis();
     } catch (e, s) {
       state = AsyncValue.error(e, s);
