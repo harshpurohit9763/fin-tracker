@@ -26,7 +26,7 @@ class DataBackupService {
     DatabaseHelper.incomeTable,
   ];
 
-  Future<void> exportData(BuildContext context) async {
+  Future<void> exportData([BuildContext? context]) async {
     try {
       final Map<String, dynamic> backupData = {};
 
@@ -46,31 +46,35 @@ class DataBackupService {
       backupData['database'] = dbData;
 
       final String jsonString = jsonEncode(backupData);
+      String? exportPath;
 
-      String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
-
-      if (selectedDirectory == null) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Data export cancelled.')),
-          );
+      if (context != null) {
+        exportPath = await FilePicker.platform.getDirectoryPath();
+        if (exportPath == null) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Data export cancelled.')),
+            );
+          }
+          return;
         }
-        return;
+      } else {
+        final directory = await getApplicationDocumentsDirectory();
+        exportPath = directory.path;
       }
 
       final String fileName =
           'exp_track_backup_${DateTime.now().toIso8601String().replaceAll(':', '-')}.json';
-      final File file = File('$selectedDirectory/$fileName');
+      final File file = File('$exportPath/$fileName');
       await file.writeAsString(jsonString);
 
-      if (context.mounted) {
+      if (context != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Data exported to $selectedDirectory/$fileName')),
+          SnackBar(content: Text('Data exported to $exportPath/$fileName')),
         );
       }
     } catch (e) {
-      if (context.mounted) {
+      if (context != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error exporting data: $e')),
         );

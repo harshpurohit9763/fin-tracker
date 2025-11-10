@@ -18,18 +18,44 @@ void main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
 
+  final prefs = await SharedPreferences.getInstance();
+
   // Initialize Workmanager
   await Workmanager().initialize(
     callbackDispatcher,
     isInDebugMode: true,
   );
 
-  // Register the background task
+  // Register the background task for EMI checks
   await Workmanager().registerPeriodicTask(
     "1",
-    simpleTaskKey,
+    emiCheckTaskKey,
     frequency: const Duration(days: 1),
   );
+
+  // Schedule backup task based on saved frequency
+  final backupFrequency = prefs.getString('autoBackupFrequency') ?? 'Never';
+  if (backupFrequency != 'Never') {
+    Duration frequency;
+    switch (backupFrequency) {
+      case 'Daily':
+        frequency = const Duration(days: 1);
+        break;
+      case 'Weekly':
+        frequency = const Duration(days: 7);
+        break;
+      case 'Monthly':
+        frequency = const Duration(days: 30);
+        break;
+      default:
+        frequency = const Duration(days: 7); // Default to weekly
+    }
+    await Workmanager().registerPeriodicTask(
+      "2",
+      backupTaskKey,
+      frequency: frequency,
+    );
+  }
 
   // Initialize database
   await DatabaseHelper.instance.database;
@@ -41,7 +67,6 @@ void main() async {
   await _initTimezone();
   WidgetsFlutterBinding.ensureInitialized();
 
-  final prefs = await SharedPreferences.getInstance();
   final currency = prefs.getString('currency') ?? 'USD';
   final themeModeString = prefs.getString('themeMode');
   final userName = prefs.getString('userName') ?? 'User';

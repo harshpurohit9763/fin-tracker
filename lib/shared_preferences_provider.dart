@@ -19,6 +19,11 @@ final accentColorProvider = StateProvider<Color>((ref) {
   return Color(colorValue);
 });
 
+final autoBackupFrequencyProvider = StateProvider<String>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return prefs.getString('autoBackupFrequency') ?? 'Never';
+});
+
 // Provider for managing tutorial visibility
 class TutorialVisibilityNotifier extends StateNotifier<Map<String, bool>> {
   final SharedPreferences _prefs;

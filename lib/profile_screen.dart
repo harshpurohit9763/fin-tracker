@@ -167,6 +167,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 24),
+          Text(
+            'Auto Backup',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: DropdownButtonFormField<String>(
+                value: ref.watch(autoBackupFrequencyProvider),
+                decoration: const InputDecoration(
+                  labelText: 'Backup Frequency',
+                  border: InputBorder.none,
+                ),
+                items: ['Daily', 'Weekly', 'Monthly', 'Never']
+                    .map((frequency) => DropdownMenuItem(
+                          value: frequency,
+                          child: Text(frequency),
+                        ))
+                    .toList(),
+                onChanged: (value) async {
+                  if (value != null) {
+                    ref.read(autoBackupFrequencyProvider.notifier).state =
+                        value;
+                    final prefs = ref.read(sharedPreferencesProvider);
+                    await prefs.setString('autoBackupFrequency', value);
+                  }
+                },
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
           ListTile(
             title: const Text('Manage Categories'),
             leading: const Icon(Icons.category),

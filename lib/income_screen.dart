@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/add_income_screen.dart';
 import 'package:personal_finance/income_card.dart';
 import 'package:personal_finance/income_provider.dart';
-import 'package:personal_finance/income_model.dart'; // Import Income model
 
 class IncomeScreen extends ConsumerWidget {
   const IncomeScreen({super.key});

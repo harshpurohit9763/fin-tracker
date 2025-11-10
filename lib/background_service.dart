@@ -1,30 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:personal_finance/db_helper.dart';
 import 'package:personal_finance/emi_repo.dart';
-import 'package:personal_finance/main.dart';
 import 'package:personal_finance/notification_helper.dart';
-import 'package:personal_finance/shared_preferences_provider.dart';
 import 'package:personal_finance/upcoming_emi_card.dart';
 import 'package:personal_finance/widget_to_image_renderer.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const simpleTaskKey = "exp_track_simple_task";
+import 'package:personal_finance/data_backup_service.dart';
+
+const emiCheckTaskKey = "exp_track_emi_check_task";
+const backupTaskKey = "exp_track_backup_task";
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     WidgetsFlutterBinding.ensureInitialized();
     await DatabaseHelper.instance.database;
-    // We need to initialize notifications before using them
     await NotificationService().init();
+
     switch (task) {
-      case simpleTaskKey:
-        await checkEmisAndSendReminders();
-        break;
+      case emiCheckTaskKey:
+        return await emiCallbackDispatcher(task, inputData);
+      case backupTaskKey:
+        return await backupCallbackDispatcher(task, inputData);
+      default:
+        return Future.value(true);
     }
-    return Future.value(true);
   });
+}
+
+Future<bool> emiCallbackDispatcher(
+    String task, Map<String, dynamic>? inputData) async {
+  await checkEmisAndSendReminders();
+  return Future.value(true);
+}
+
+Future<bool> backupCallbackDispatcher(
+    String task, Map<String, dynamic>? inputData) async {
+  final prefs = await SharedPreferences.getInstance();
+  final database = await DatabaseHelper.instance.database;
+  final backupService = DataBackupService(prefs, database);
+  try {
+    await backupService.exportData();
+    return Future.value(true);
+  } catch (e) {
+    return Future.value(false);
+  }
 }
 
 Future<void> checkEmisAndSendReminders() async {

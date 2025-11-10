@@ -27,15 +27,6 @@ class DummyDataService {
       final String response = await rootBundle.loadString('assets/dummy.json');
       final data = json.decode(response);
 
-      // Clear existing data (optional, but good for dummy data population)
-      // await ref.read(expenseProvider.notifier).clearAllExpenses();
-      // await ref.read(incomeProvider.notifier).clearAllIncomes();
-      // await ref.read(assetProvider.notifier).clearAllAssets();
-      // await ref.read(emiProvider.notifier).clearAllEmis();
-      // await ref.read(subscriptionProvider.notifier).clearAllSubscriptions();
-      // await ref.read(categoryListProvider.notifier).clearAllCategories();
-      // await ref.read(budgetProvider.notifier).clearAllBudgets();
-
       // Populate Categories
       if (data['categories'] != null) {
         for (var item in data['categories']) {

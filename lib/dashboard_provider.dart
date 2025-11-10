@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_finance/app_formater.dart';
 import 'package:personal_finance/emi_provider.dart';
 import 'package:personal_finance/emi_repo.dart';
 import 'package:personal_finance/report_repo.dart';

@@ -7,7 +7,6 @@ import 'package:personal_finance/expense_provider.dart';
 import 'package:personal_finance/insights_screen.dart';
 import 'package:personal_finance/net_worth_screen.dart';
 import 'package:personal_finance/app_formater.dart';
-import 'package:personal_finance/category_provider.dart';
 import 'package:personal_finance/dashboard_provider.dart';
 import 'package:personal_finance/emi_provider.dart';
 import 'package:personal_finance/matteric_card.dart';
@@ -16,9 +15,7 @@ import 'package:personal_finance/overlapping_card_view.dart';
 import 'package:personal_finance/flippable_emi_card.dart';
 import 'package:personal_finance/shared_preferences_provider.dart';
 import 'package:personal_finance/upcomming_emi.dart';
-import 'package:personal_finance/upcoming_emi_card.dart';
 import 'package:personal_finance/profile_screen.dart';
-import 'package:personal_finance/add_income_screen.dart';
 
 String _getGreeting() {
   final hour = DateTime.now().hour;
