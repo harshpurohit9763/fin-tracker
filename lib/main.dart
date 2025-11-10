@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:personal_finance/app_navigation.dart';
-import 'package:personal_finance/db_helper.dart';
-import 'package:personal_finance/notification_helper.dart';
-import 'package:personal_finance/profile_screen.dart';
-import 'package:personal_finance/shared_preferences_provider.dart';
+import 'package:personal_finance/views/app_navigation.dart';
+import 'package:personal_finance/db/db_helper.dart';
+import 'package:personal_finance/helper/notification_helper.dart';
+import 'package:personal_finance/views/profile_screen.dart';
+import 'package:personal_finance/controllers/shared_preferences_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-import 'package:personal_finance/background_service.dart';
+import 'package:personal_finance/helper/background_service.dart';
 import 'package:workmanager/workmanager.dart';
 
 void main() async {
