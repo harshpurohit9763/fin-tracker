@@ -497,10 +497,6 @@ class _TransactionListCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final expensesAsync = ref.watch(filteredExpensesProvider);
-    final incomesAsync = ref.watch(filteredIncomeProvider);
-    final currency = ref.watch(currencyProvider);
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -509,112 +505,125 @@ class _TransactionListCard extends ConsumerWidget {
           children: [
             Text('Transactions', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            expensesAsync.when(
-              data: (expenses) {
-                return incomesAsync.when(
-                  data: (incomes) {
-                    final allTransactions = <_TransactionItem>[];
-                    for (var exp in expenses) {
-                      allTransactions.add(_TransactionItem(
-                          date: exp.date,
-                          description: exp.description ?? '',
-                          amount: exp.amount,
-                          type: _TransactionType.expense,
-                          category: exp.category));
-                    }
-                    for (var inc in incomes) {
-                      allTransactions.add(_TransactionItem(
-                          date: inc.date,
-                          description: inc.description,
-                          amount: inc.amount,
-                          type: _TransactionType.income,
-                          category: inc.source));
-                    }
-
-                    // Sort transactions by date
-                    allTransactions.sort((a, b) => a.date.compareTo(b.date));
-
-                    if (allTransactions.isEmpty) {
-                      return const SizedBox(
-                          height: 100,
-                          child: Center(
-                              child: Text('No transactions in this period.')));
-                    }
-
-                    final offset = ref.watch(transactionOffsetProvider);
-                    final limit = ref.watch(transactionLimitProvider);
-
-                    return Column(
-                      children: [
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            columns: const [
-                              DataColumn(label: Text('Date')),
-                              DataColumn(label: Text('Category/Source')),
-                              DataColumn(label: Text('Description')),
-                              DataColumn(label: Text('Type')),
-                              DataColumn(label: Text('Amount'), numeric: true),
-                            ],
-                            rows: allTransactions.map((tx) {
-                              return DataRow(cells: [
-                                DataCell(
-                                    Text(AppFormatters.formatDate(tx.date))),
-                                DataCell(Text(tx.category)),
-                                DataCell(Text(tx.description)),
-                                DataCell(Text(
-                                    tx.type == _TransactionType.expense
-                                        ? 'Expense'
-                                        : 'Income')),
-                                DataCell(Text(
-                                    (tx.type == _TransactionType.expense
-                                            ? '-'
-                                            : '+') +
-                                        AppFormatters.formatCurrency(
-                                            tx.amount, currency))),
-                              ]);
-                            }).toList(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            ElevatedButton(
-                              onPressed: offset > 0
-                                  ? () {
-                                      ref
-                                          .read(transactionOffsetProvider.notifier)
-                                          .state = offset - limit;
-                                    }
-                                  : null,
-                              child: const Text('Previous'),
-                            ),
-                            ElevatedButton(
-                              onPressed: allTransactions.length == limit
-                                  ? () {
-                                      ref
-                                          .read(transactionOffsetProvider.notifier)
-                                          .state = offset + limit;
-                                    }
-                                  : null,
-                              child: const Text('Next'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, s) => Text('Error: $e'),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Text('Error: $e'),
-            ),
+            const _TransactionTable(),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TransactionTable extends ConsumerWidget {
+  const _TransactionTable();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final expensesAsync = ref.watch(filteredExpensesProvider);
+    final incomesAsync = ref.watch(filteredIncomeProvider);
+    final currency = ref.watch(currencyProvider);
+
+    return expensesAsync.when(
+      data: (expenses) {
+        return incomesAsync.when(
+          data: (incomes) {
+            final allTransactions = <_TransactionItem>[];
+            for (var exp in expenses) {
+              allTransactions.add(_TransactionItem(
+                  date: exp.date,
+                  description: exp.description ?? '',
+                  amount: exp.amount,
+                  type: _TransactionType.expense,
+                  category: exp.category));
+            }
+            for (var inc in incomes) {
+              allTransactions.add(_TransactionItem(
+                  date: inc.date,
+                  description: inc.description,
+                  amount: inc.amount,
+                  type: _TransactionType.income,
+                  category: inc.source));
+            }
+
+            // Sort transactions by date
+            allTransactions.sort((a, b) => a.date.compareTo(b.date));
+
+            if (allTransactions.isEmpty) {
+              return const SizedBox(
+                  height: 100,
+                  child: Center(
+                      child: Text('No transactions in this period.')));
+            }
+
+            final offset = ref.watch(transactionOffsetProvider);
+            final limit = ref.watch(transactionLimitProvider);
+
+            return Column(
+              children: [
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    columns: const [
+                      DataColumn(label: Text('Date')),
+                      DataColumn(label: Text('Category/Source')),
+                      DataColumn(label: Text('Description')),
+                      DataColumn(label: Text('Type')),
+                      DataColumn(label: Text('Amount'), numeric: true),
+                    ],
+                    rows: allTransactions.map((tx) {
+                      return DataRow(cells: [
+                        DataCell(
+                            Text(AppFormatters.formatDate(tx.date))),
+                        DataCell(Text(tx.category)),
+                        DataCell(Text(tx.description)),
+                        DataCell(Text(
+                            tx.type == _TransactionType.expense
+                                ? 'Expense'
+                                : 'Income')),
+                        DataCell(Text(
+                            (tx.type == _TransactionType.expense
+                                    ? '-'
+                                    : '+') +
+                                AppFormatters.formatCurrency(
+                                    tx.amount, currency))),
+                      ]);
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      onPressed: offset > 0
+                          ? () {
+                              ref
+                                  .read(transactionOffsetProvider.notifier)
+                                  .state = offset - limit;
+                            }
+                          : null,
+                      child: const Text('Previous'),
+                    ),
+                    ElevatedButton(
+                      onPressed: (incomes.length == limit || expenses.length == limit)
+                          ? () {
+                              ref
+                                  .read(transactionOffsetProvider.notifier)
+                                  .state = offset + limit;
+                            }
+                          : null,
+                      child: const Text('Next'),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, s) => Text('Error: $e'),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, s) => Text('Error: $e'),
     );
   }
 }

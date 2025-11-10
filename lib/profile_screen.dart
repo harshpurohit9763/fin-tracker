@@ -203,50 +203,51 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               await backupService.importData(context);
             },
           ),
-          ListTile(
-            title: const Text('Populate Dummy Data'),
-            leading: const Icon(Icons.data_usage),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('Populate Dummy Data?'),
-                  content: const Text(
-                      'This will add dummy data to your application. Existing data will not be cleared.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(false),
-                      child: const Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(ctx).pop(true),
-                      child: const Text('Populate'),
-                    ),
-                  ],
-                ),
-              );
+          // ListTile(
+          //   title: const Text('Populate Dummy Data'),
+          //   leading: const Icon(Icons.data_usage),
+          //   trailing: const Icon(Icons.chevron_right),
+          //   onTap: () async {
+          //     final confirm = await showDialog<bool>(
+          //       context: context,
+          //       builder: (ctx) => AlertDialog(
+          //         title: const Text('Populate Dummy Data?'),
+          //         content: const Text(
+          //             'This will add dummy data to your application. Existing data will not be cleared.'),
+          //         actions: [
+          //           TextButton(
+          //             onPressed: () => Navigator.of(ctx).pop(false),
+          //             child: const Text('Cancel'),
+          //           ),
+          //           TextButton(
+          //             onPressed: () => Navigator.of(ctx).pop(true),
+          //             child: const Text('Populate'),
+          //           ),
+          //         ],
+          //       ),
+          //     );
 
-              if (confirm == true) {
-                await ref.read(dummyDataServiceProvider).populateDummyData();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Dummy data populated!')),
-                );
-                // Invalidate providers to refresh UI
-                ref.invalidate(currentMonthSpendingProvider);
-                ref.invalidate(upcomingEmisThisWeekCountProvider);
-                ref.invalidate(last6MonthsSpendingProvider);
-                ref.invalidate(next3UpcomingEmisProvider);
-                ref.invalidate(expenseListProvider);
-                ref.invalidate(incomeListProvider);
-                ref.invalidate(categoryListProvider);
-                ref.invalidate(budgetListProvider);
-                ref.invalidate(emiListProvider);
-                ref.invalidate(subscriptionListProvider);
-                ref.invalidate(assetListProvider);
-              }
-            },
-          ),
+          //     if (confirm == true) {
+          //       await ref.read(dummyDataServiceProvider).populateDummyData();
+          //       ScaffoldMessenger.of(context).showSnackBar(
+          //         const SnackBar(content: Text('Dummy data populated!')),
+          //       );
+          //       // Invalidate providers to refresh UI
+          //       ref.invalidate(currentMonthSpendingProvider);
+          //       ref.invalidate(upcomingEmisThisWeekCountProvider);
+          //       ref.invalidate(last6MonthsSpendingProvider);
+          //       ref.invalidate(next3UpcomingEmisProvider);
+          //       ref.invalidate(expenseListProvider);
+          //       ref.invalidate(incomeListProvider);
+          //       ref.invalidate(categoryListProvider);
+          //       ref.invalidate(budgetListProvider);
+          //       ref.invalidate(emiListProvider);
+          //       ref.invalidate(subscriptionListProvider);
+          //       ref.invalidate(assetListProvider);
+          //     }
+          //   },
+          // ),
+
           ListTile(
             title: const Text('Delete All Data'),
             leading: const Icon(Icons.delete_forever),

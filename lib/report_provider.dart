@@ -34,7 +34,7 @@ final selectedYearProvider = StateProvider<int>((ref) => DateTime.now().year);
 
 // Pagination state for transactions
 final transactionOffsetProvider = StateProvider<int>((ref) => 0);
-final transactionLimitProvider = StateProvider<int>((ref) => 50);
+final transactionLimitProvider = StateProvider<int>((ref) => 20);
 
 // Provider for Category Breakdown data
 final categoryBreakdownProvider =
