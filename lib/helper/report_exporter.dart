@@ -18,7 +18,6 @@ class ReportExporter {
 
   static Future<void> generateAndShareReport({
     required DateTimeRange dateRange,
-    required String userName,
     required String currency,
     required List<Expense> expenses,
     required List<Income> incomes,
@@ -78,33 +77,31 @@ class ReportExporter {
 
     // 1. Cover Page
     doc.addPage(
-      pw.Page(
+      pw.MultiPage(
         theme: theme,
         build: (pw.Context context) {
-          return pw.Center(
-            child: pw.Column(
-              mainAxisAlignment: pw.MainAxisAlignment.center,
-              children: [
-                pw.Text(
-                  'Financial Report',
-                  style: pw.TextStyle(
-                      fontSize: 40,
-                      fontWeight: pw.FontWeight.bold,
-                      color: deepBlue),
-                ),
-                pw.SizedBox(height: 20),
-                pw.Text(
-                  'Prepared for: $userName',
-                  style: const pw.TextStyle(fontSize: 20),
-                ),
-                pw.SizedBox(height: 10),
-                pw.Text(
-                  'Period: ${AppFormatters.formatDate(dateRange.start)} - ${AppFormatters.formatDate(dateRange.end)}',
-                  style: const pw.TextStyle(fontSize: 16, color: darkGrey),
-                ),
-              ],
-            ),
-          );
+          return [
+            pw.Center(
+              child: pw.Column(
+                mainAxisAlignment: pw.MainAxisAlignment.center,
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Text(
+                    'Financial Sheet',
+                    style: pw.TextStyle(
+                        fontSize: 40,
+                        fontWeight: pw.FontWeight.bold,
+                        color: deepBlue),
+                  ),
+                  pw.SizedBox(height: 10),
+                  pw.Text(
+                    'Period: ${AppFormatters.formatDate(dateRange.start)} - ${AppFormatters.formatDate(dateRange.end)}',
+                    style: const pw.TextStyle(fontSize: 16, color: darkGrey),
+                  ),
+                ],
+              ),
+            )
+          ];
         },
       ),
     );
@@ -112,6 +109,7 @@ class ReportExporter {
     // 2. Highlights & Review of Operations
     doc.addPage(
       pw.MultiPage(
+        maxPages: 100,
         theme: theme,
         header: (context) => pw.Header(
             level: 0,
@@ -196,6 +194,7 @@ class ReportExporter {
     // 3. Director's Report & Social Matters (Placeholders)
     doc.addPage(
       pw.MultiPage(
+        maxPages: 100,
         theme: theme,
         header: (context) => pw.Header(
             level: 0,
@@ -224,6 +223,7 @@ class ReportExporter {
     // 4. Transaction List
     doc.addPage(
       pw.MultiPage(
+        maxPages: 100,
         theme: theme,
         header: (context) => pw.Header(
             level: 0,

@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_finance/helper/app_formater.dart';
+import 'package:personal_finance/helper/tflite_helper.dart';
 import 'package:personal_finance/models/category_model.dart';
 import 'package:personal_finance/controllers/category_provider.dart';
 import 'package:personal_finance/controllers/dashboard_provider.dart';
@@ -23,6 +26,8 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   late TextEditingController _descriptionController;
   Category? _selectedCategory;
   DateTime _selectedDate = DateTime.now();
+  TFLiteHelper? _tfliteHelper;
+  final ImagePicker _picker = ImagePicker();
 
   bool get _isEditing => widget.expense != null;
 
@@ -35,6 +40,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     _descriptionController = TextEditingController(
       text: widget.expense?.description,
     );
+    _tfliteHelper = TFLiteHelper();
     if (_isEditing) {
       _selectedDate = widget.expense!.date;
       // Note: _selectedCategory will be set when the category list loads
@@ -45,6 +51,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
+    _tfliteHelper?.close();
     super.dispose();
   }
 
@@ -59,6 +66,25 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       setState(() {
         _selectedDate = pickedDate;
       });
+    }
+  }
+
+  Future<void> _pickAndProcessImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      final bytes = await image.readAsBytes();
+      final recognizedText = await _tfliteHelper?.predict(bytes);
+      if (recognizedText != null) {
+        // Simple parsing logic, assuming amount is a number in the text
+        final RegExp amountRegex = RegExp(r'(\d+\.\d{2})');
+        final match = amountRegex.firstMatch(recognizedText);
+        if (match != null) {
+          _amountController.text = match.group(1)!;
+        }
+        setState(() {
+          _descriptionController.text = recognizedText;
+        });
+      }
     }
   }
 
@@ -104,7 +130,16 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEditing ? 'Edit Expense' : 'Add Expense')),
+      appBar: AppBar(
+        title: Text(_isEditing ? 'Edit Expense' : 'Add Expense'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.camera_alt),
+            onPressed: _pickAndProcessImage,
+            tooltip: 'Extract from bill',
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(

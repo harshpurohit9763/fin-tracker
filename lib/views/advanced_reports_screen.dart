@@ -57,12 +57,11 @@ class _AdvancedReportsScreenState extends ConsumerState<AdvancedReportsScreen> {
 
               // Gather all the data needed for the report
               final dateRange = ref.read(currentDateRangeProvider);
-              final userName = ref.read(userNameProvider);
               final currency = ref.read(currencyProvider);
-              final expenses = await ref.read(filteredExpensesProvider.future)
-                  as List<Expense>;
+              final expenses =
+                  await ref.read(allExpensesForReportProvider.future);
               final incomes =
-                  await ref.read(filteredIncomeProvider.future) as List<Income>;
+                  await ref.read(allIncomesForReportProvider.future);
               final spendingBreakdown =
                   await ref.read(spendingBreakdownProvider.future);
               // Correctly read the data from StateNotifierProviders
@@ -74,7 +73,6 @@ class _AdvancedReportsScreenState extends ConsumerState<AdvancedReportsScreen> {
 
               await ReportExporter.generateAndShareReport(
                 dateRange: dateRange,
-                userName: userName,
                 currency: currency,
                 expenses: expenses,
                 incomes: incomes,
@@ -562,30 +560,34 @@ class _TransactionTable extends ConsumerWidget {
 
             return Column(
               children: [
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('Date')),
-                      DataColumn(label: Text('Category/Source')),
-                      DataColumn(label: Text('Description')),
-                      DataColumn(label: Text('Type')),
-                      DataColumn(label: Text('Amount'), numeric: true),
-                    ],
-                    rows: allTransactions.map((tx) {
-                      return DataRow(cells: [
-                        DataCell(Text(AppFormatters.formatDate(tx.date))),
-                        DataCell(Text(tx.category)),
-                        DataCell(Text(tx.description)),
-                        DataCell(Text(tx.type == _TransactionType.expense
-                            ? 'Expense'
-                            : 'Income')),
-                        DataCell(Text((tx.type == _TransactionType.expense
-                                ? '-'
-                                : '+') +
-                            AppFormatters.formatCurrency(tx.amount, currency))),
-                      ]);
-                    }).toList(),
+                SizedBox(
+                  height: 300,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columns: const [
+                        DataColumn(label: Text('Date')),
+                        DataColumn(label: Text('Category/Source')),
+                        DataColumn(label: Text('Description')),
+                        DataColumn(label: Text('Type')),
+                        DataColumn(label: Text('Amount'), numeric: true),
+                      ],
+                      rows: allTransactions.map((tx) {
+                        return DataRow(cells: [
+                          DataCell(Text(AppFormatters.formatDate(tx.date))),
+                          DataCell(Text(tx.category)),
+                          DataCell(Text(tx.description)),
+                          DataCell(Text(tx.type == _TransactionType.expense
+                              ? 'Expense'
+                              : 'Income')),
+                          DataCell(Text((tx.type == _TransactionType.expense
+                                  ? '-'
+                                  : '+') +
+                              AppFormatters.formatCurrency(
+                                  tx.amount, currency))),
+                        ]);
+                      }).toList(),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -603,14 +605,13 @@ class _TransactionTable extends ConsumerWidget {
                       child: const Text('Previous'),
                     ),
                     ElevatedButton(
-                      onPressed:
-                          (incomes.length == limit || expenses.length == limit)
-                              ? () {
-                                  ref
-                                      .read(transactionOffsetProvider.notifier)
-                                      .state = offset + limit;
-                                }
-                              : null,
+                      onPressed: allTransactions.length >= limit
+                          ? () {
+                              ref
+                                  .read(transactionOffsetProvider.notifier)
+                                  .state = offset + limit;
+                            }
+                          : null,
                       child: const Text('Next'),
                     ),
                   ],

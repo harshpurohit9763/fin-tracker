@@ -121,3 +121,20 @@ final filteredIncomeProvider =
 
   return repository.getIncomesPaginated(range.start, range.end, limit, offset);
 });
+
+// A provider that returns all expenses for a given date range for the report
+final allExpensesForReportProvider = FutureProvider.autoDispose((ref) async {
+  final range = ref.watch(currentDateRangeProvider);
+  final repository = ref.watch(reportRepositoryProvider);
+
+  return repository.getAllExpensesForReport(range.start, range.end);
+});
+
+// A provider that returns all incomes for a given date range for the report
+final allIncomesForReportProvider =
+    FutureProvider.autoDispose<List<Income>>((ref) async {
+  final range = ref.watch(currentDateRangeProvider);
+  final repository = ref.watch(reportRepositoryProvider);
+
+  return repository.getAllIncomesForReport(range.start, range.end);
+});

@@ -72,6 +72,42 @@ class ReportRepository {
     return List.generate(maps.length, (i) => Income.fromMap(maps[i]));
   }
 
+  // Get all expenses for a given date range for the report
+  Future<List<Expense>> getAllExpensesForReport(
+      DateTime start, DateTime end) async {
+    final db = await _dbHelper.database;
+    final endOfDay = DateTime(end.year, end.month, end.day, 23, 59, 59);
+    final List<Map<String, dynamic>> maps = await db.query(
+      DatabaseHelper.expensesTable,
+      where:
+          '${DatabaseHelper.colDate} >= ? AND ${DatabaseHelper.colDate} <= ?',
+      whereArgs: [
+        start.millisecondsSinceEpoch,
+        endOfDay.millisecondsSinceEpoch
+      ],
+      orderBy: '${DatabaseHelper.colDate} DESC',
+    );
+    return List.generate(maps.length, (i) => Expense.fromMap(maps[i]));
+  }
+
+  // Get all incomes for a given date range for the report
+  Future<List<Income>> getAllIncomesForReport(
+      DateTime start, DateTime end) async {
+    final db = await _dbHelper.database;
+    final endOfDay = DateTime(end.year, end.month, end.day, 23, 59, 59);
+    final List<Map<String, dynamic>> maps = await db.query(
+      DatabaseHelper.incomeTable,
+      where:
+          '${DatabaseHelper.colIncomeDate} >= ? AND ${DatabaseHelper.colIncomeDate} <= ?',
+      whereArgs: [
+        start.millisecondsSinceEpoch,
+        endOfDay.millisecondsSinceEpoch
+      ],
+      orderBy: '${DatabaseHelper.colIncomeDate} DESC',
+    );
+    return List.generate(maps.length, (i) => Income.fromMap(maps[i]));
+  }
+
   // Get total income for a given date range
   Future<double> getTotalIncomeForDateRange(
       DateTime start, DateTime end) async {
