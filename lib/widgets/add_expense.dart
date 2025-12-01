@@ -101,18 +101,28 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       final description = _descriptionController.text;
       final monthYear = AppFormatters.formatMonthYear(_selectedDate);
 
-      final newExpense = Expense(
-        id: widget.expense?.id,
-        amount: amount,
-        category: _selectedCategory!.name,
-        date: _selectedDate,
-        monthYear: monthYear,
-        description: description.isNotEmpty ? description : null,
-      );
-
       if (_isEditing) {
-        await ref.read(expenseListProvider.notifier).updateExpense(newExpense);
+        // Preserve EMI-specific data when updating
+        final updatedExpense = widget.expense!.copyWith(
+          amount: amount,
+          category: _selectedCategory!.name,
+          date: _selectedDate,
+          monthYear: monthYear,
+          description: description.isNotEmpty ? description : null,
+          // Note: scheduledAmount and transactionType are preserved by copyWith
+        );
+        await ref
+            .read(expenseListProvider.notifier)
+            .updateExpense(updatedExpense);
       } else {
+        // This is for creating a new expense
+        final newExpense = Expense(
+          amount: amount,
+          category: _selectedCategory!.name,
+          date: _selectedDate,
+          monthYear: monthYear,
+          description: description.isNotEmpty ? description : null,
+        );
         await ref.read(expenseListProvider.notifier).addExpense(newExpense);
       }
 
@@ -128,6 +138,9 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     final categoriesAsyncValue = ref.watch(categoryListProvider);
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
+
+    final bool isEmiExpense =
+        _isEditing && widget.expense?.transactionType == 'EMI';
 
     return Scaffold(
       appBar: AppBar(
@@ -150,10 +163,10 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
               // Amount
               TextFormField(
                 controller: _amountController,
-                decoration: const InputDecoration(
-                  labelText: 'Amount',
-                  prefixIcon: Icon(Icons.attach_money),
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: isEmiExpense ? 'Amount Paid' : 'Amount',
+                  prefixIcon: const Icon(Icons.attach_money),
+                  border: const OutlineInputBorder(),
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
@@ -172,6 +185,22 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                 },
               ),
               const SizedBox(height: 16),
+
+              // Scheduled Amount (only for EMI)
+              if (isEmiExpense) ...[
+                TextFormField(
+                  initialValue:
+                      widget.expense?.scheduledAmount?.toString() ?? '0.0',
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Scheduled Amount',
+                    prefixIcon: Icon(Icons.schedule),
+                    border: OutlineInputBorder(),
+                    filled: true,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Category
               categoriesAsyncValue.when(
@@ -197,11 +226,14 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
                         child: Text(category.name),
                       );
                     }).toList(),
-                    onChanged: (Category? newValue) {
-                      setState(() {
-                        _selectedCategory = newValue;
-                      });
-                    },
+                    // Disable category change for EMI expenses
+                    onChanged: isEmiExpense
+                        ? null
+                        : (Category? newValue) {
+                            setState(() {
+                              _selectedCategory = newValue;
+                            });
+                          },
                     validator: (value) =>
                         value == null ? 'Please select a category' : null,
                   );

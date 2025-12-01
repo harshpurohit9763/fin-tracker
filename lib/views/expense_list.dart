@@ -5,6 +5,7 @@ import 'package:personal_finance/helper/app_formater.dart';
 import 'package:personal_finance/controllers/expense_provider.dart';
 import 'package:personal_finance/widgets/selected_month_year_provider.dart'
     hide selectedMonthYearProvider;
+import 'package:personal_finance/widgets/expense_list_item.dart';
 import 'package:personal_finance/controllers/shared_preferences_provider.dart';
 
 class ExpenseListScreen extends ConsumerWidget {
@@ -90,31 +91,18 @@ class ExpenseListScreen extends ConsumerWidget {
             itemCount: expenses.length,
             itemBuilder: (context, index) {
               final expense = expenses[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  leading: CircleAvatar(child: Text(expense.category[0])),
-                  title: Text(
-                    AppFormatters.formatCurrency(expense.amount, currency),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    '${expense.category} on ${AppFormatters.formatDate(expense.date)}',
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    onPressed: () => _confirmDelete(context, ref, expense.id!),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            AddExpenseScreen(expense: expense),
-                      ),
-                    );
-                  },
-                ),
+              return ExpenseListItem(
+                expense: expense,
+                currency: currency,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddExpenseScreen(expense: expense),
+                    ),
+                  );
+                },
+                onDelete: () => _confirmDelete(context, ref, expense.id!),
               );
             },
           );

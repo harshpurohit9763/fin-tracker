@@ -9,6 +9,8 @@ import 'package:personal_finance/controllers/insights_provider.dart';
 import 'package:personal_finance/controllers/report_provider.dart';
 import 'package:personal_finance/helper/report_exporter.dart';
 import 'package:personal_finance/controllers/shared_preferences_provider.dart';
+import 'package:personal_finance/widgets/expense_list_item.dart';
+import 'package:personal_finance/widgets/income_card.dart';
 import 'package:personal_finance/controllers/subscription_provider.dart';
 
 import '../models/expense_model.dart';
@@ -492,12 +494,18 @@ class _BudgetSummaryCard extends ConsumerWidget {
   }
 }
 
+
+
 /// Card for displaying a detailed list of transactions.
 class _TransactionListCard extends ConsumerWidget {
   const _TransactionListCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final expensesAsync = ref.watch(filteredExpensesProvider);
+    final incomesAsync = ref.watch(filteredIncomeProvider);
+    final currency = ref.watch(currencyProvider);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -506,143 +514,49 @@ class _TransactionListCard extends ConsumerWidget {
           children: [
             Text('Transactions', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            const _TransactionTable(),
+            expensesAsync.when(
+              data: (expenses) {
+                return incomesAsync.when(
+                  data: (incomes) {
+                    final allTransactions = <dynamic>[...expenses, ...incomes];
+                    allTransactions.sort((a, b) => b.date.compareTo(a.date));
+
+                    if (allTransactions.isEmpty) {
+                      return const SizedBox(
+                          height: 100,
+                          child: Center(
+                              child: Text('No transactions in this period.')));
+                    }
+
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: allTransactions.length,
+                      itemBuilder: (context, index) {
+                        final transaction = allTransactions[index];
+                        if (transaction is Expense) {
+                          return ExpenseListItem(
+                            expense: transaction,
+                            currency: currency,
+                          );
+                        } else if (transaction is Income) {
+                          return IncomeCard(income: transaction);
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, s) => Text('Error loading incomes: $e'),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, s) => Text('Error loading expenses: $e'),
+            ),
           ],
         ),
       ),
     );
   }
-}
-
-class _TransactionTable extends ConsumerWidget {
-  const _TransactionTable();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final expensesAsync = ref.watch(filteredExpensesProvider);
-    final incomesAsync = ref.watch(filteredIncomeProvider);
-    final currency = ref.watch(currencyProvider);
-
-    return expensesAsync.when(
-      data: (expenses) {
-        return incomesAsync.when(
-          data: (incomes) {
-            final allTransactions = <_TransactionItem>[];
-            for (var exp in expenses) {
-              allTransactions.add(_TransactionItem(
-                  date: exp.date,
-                  description: exp.description ?? '',
-                  amount: exp.amount,
-                  type: _TransactionType.expense,
-                  category: exp.category));
-            }
-            for (var inc in incomes) {
-              allTransactions.add(_TransactionItem(
-                  date: inc.date,
-                  description: inc.description,
-                  amount: inc.amount,
-                  type: _TransactionType.income,
-                  category: inc.source));
-            }
-
-            // Sort transactions by date
-            allTransactions.sort((a, b) => a.date.compareTo(b.date));
-
-            if (allTransactions.isEmpty) {
-              return const SizedBox(
-                  height: 100,
-                  child:
-                      Center(child: Text('No transactions in this period.')));
-            }
-
-            final offset = ref.watch(transactionOffsetProvider);
-            final limit = ref.watch(transactionLimitProvider);
-
-            return Column(
-              children: [
-                SizedBox(
-                  height: 300,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text('Date')),
-                        DataColumn(label: Text('Category/Source')),
-                        DataColumn(label: Text('Description')),
-                        DataColumn(label: Text('Type')),
-                        DataColumn(label: Text('Amount'), numeric: true),
-                      ],
-                      rows: allTransactions.map((tx) {
-                        return DataRow(cells: [
-                          DataCell(Text(AppFormatters.formatDate(tx.date))),
-                          DataCell(Text(tx.category)),
-                          DataCell(Text(tx.description)),
-                          DataCell(Text(tx.type == _TransactionType.expense
-                              ? 'Expense'
-                              : 'Income')),
-                          DataCell(Text((tx.type == _TransactionType.expense
-                                  ? '-'
-                                  : '+') +
-                              AppFormatters.formatCurrency(
-                                  tx.amount, currency))),
-                        ]);
-                      }).toList(),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    ElevatedButton(
-                      onPressed: offset > 0
-                          ? () {
-                              ref
-                                  .read(transactionOffsetProvider.notifier)
-                                  .state = offset - limit;
-                            }
-                          : null,
-                      child: const Text('Previous'),
-                    ),
-                    ElevatedButton(
-                      onPressed: allTransactions.length >= limit
-                          ? () {
-                              ref
-                                  .read(transactionOffsetProvider.notifier)
-                                  .state = offset + limit;
-                            }
-                          : null,
-                      child: const Text('Next'),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, s) => Text('Error: $e'),
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, s) => Text('Error: $e'),
-    );
-  }
-}
-
-enum _TransactionType { income, expense }
-
-class _TransactionItem {
-  final DateTime date;
-  final String description;
-  final double amount;
-  final _TransactionType type;
-  final String category;
-
-  _TransactionItem({
-    required this.date,
-    required this.description,
-    required this.amount,
-    required this.type,
-    required this.category,
-  });
 }

@@ -349,60 +349,86 @@ class ReportExporter {
     }
 
     // Combine expenses and incomes
-    final allTransactions = <_Transaction>[];
-    for (var exp in expenses) {
-      allTransactions.add(_Transaction(
-          date: exp.date,
-          description: exp.description ?? '-',
-          amount: exp.amount,
-          type: _TransactionType.expense,
-          category: exp.category));
-    }
-    for (var inc in incomes) {
-      allTransactions.add(_Transaction(
-          date: inc.date,
-          description: inc.description,
-          amount: inc.amount,
-          type: _TransactionType.income,
-          category: inc.source));
-    }
+    final allTransactions = <dynamic>[...expenses, ...incomes];
+    allTransactions.sort((a, b) => b.date.compareTo(a.date));
 
-    // Sort transactions by date
-    allTransactions.sort((a, b) => a.date.compareTo(b.date));
+    final headers = ['Date', 'Description', 'Category', 'Amount'];
 
-    final headers = [
-      'Date',
-      'Category/Source',
-      'Description',
-      'Type',
-      'Amount'
-    ];
-    final data = allTransactions
-        .map((tx) => [
-              AppFormatters.formatDate(tx.date),
-              tx.category,
-              tx.description,
-              tx.type == _TransactionType.expense ? 'Expense' : 'Income',
-              (tx.type == _TransactionType.expense ? '-' : '+') +
-                  AppFormatters.formatCurrency(tx.amount, currency)
-            ])
-        .toList();
-
-    return pw.TableHelper.fromTextArray(
+    return pw.Table.fromTextArray(
       headers: headers,
-      data: data,
-      border: pw.TableBorder.all(color: lightGrey),
       headerStyle:
           pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
       headerDecoration: const pw.BoxDecoration(color: deepBlue),
-      cellStyle: const pw.TextStyle(),
+      cellStyle: const pw.TextStyle(fontSize: 10),
+      cellPadding: const pw.EdgeInsets.all(6),
+      border: pw.TableBorder.all(color: lightGrey),
       cellAlignments: {
         0: pw.Alignment.centerLeft,
         1: pw.Alignment.centerLeft,
         2: pw.Alignment.centerLeft,
-        3: pw.Alignment.center,
-        4: pw.Alignment.centerRight,
+        3: pw.Alignment.centerRight,
       },
+      data: allTransactions.map((tx) {
+        if (tx is Expense &&
+            tx.transactionType == 'EMI' &&
+            tx.scheduledAmount != null) {
+          final difference = tx.amount - tx.scheduledAmount!;
+          return [
+            AppFormatters.formatDate(tx.date),
+            tx.description ?? 'EMI Payment',
+            tx.category,
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              children: [
+                pw.Text(
+                  'Paid: ${AppFormatters.formatCurrency(tx.amount, currency)}',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                ),
+                pw.Text(
+                  'Scheduled: ${AppFormatters.formatCurrency(tx.scheduledAmount!, currency)}',
+                  style: const pw.TextStyle(fontSize: 8),
+                ),
+                pw.Divider(height: 2),
+                pw.Text(
+                  'Difference: ${AppFormatters.formatCurrency(difference, currency)}',
+                  style: pw.TextStyle(
+                    fontSize: 8,
+                    color: difference == 0
+                        ? PdfColors.grey
+                        : difference > 0
+                            ? PdfColors.red
+                            : PdfColors.green,
+                  ),
+                ),
+              ],
+            ),
+          ];
+        } else if (tx is Expense) {
+          return [
+            AppFormatters.formatDate(tx.date),
+            tx.description ?? '',
+            tx.category,
+            pw.Text(
+              '-${AppFormatters.formatCurrency(tx.amount, currency)}',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            ),
+          ];
+        } else if (tx is Income) {
+          return [
+            AppFormatters.formatDate(tx.date),
+            tx.description,
+            tx.source,
+            pw.Text(
+              '+${AppFormatters.formatCurrency(tx.amount, currency)}',
+              style: pw.TextStyle(
+                color: PdfColors.blue,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+          ];
+        }
+        return ['', '', '', ''];
+      }).toList(),
     );
   }
 
@@ -473,20 +499,4 @@ class ReportExporter {
   }
 }
 
-enum _TransactionType { income, expense }
 
-class _Transaction {
-  final DateTime date;
-  final String description;
-  final double amount;
-  final _TransactionType type;
-  final String category;
-
-  _Transaction({
-    required this.date,
-    required this.description,
-    required this.amount,
-    required this.type,
-    required this.category,
-  });
-}
