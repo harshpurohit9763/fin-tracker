@@ -66,17 +66,27 @@ class EmiListNotifier extends StateNotifier<AsyncValue<List<Emi>>> {
   }
 
   Future<void> markEmiAsPaid(Emi emi) async {
+    // This now calls the new method with the default amount.
+    await markEmiAsPaidWithAmount(emi, emi.monthlyEmiAmount);
+  }
+
+  Future<void> markEmiAsPaidWithAmount(Emi emi, double paidAmount) async {
     try {
-      final updatedEmi = await _repository.markEmiAsPaid(emi);
+      // First, update the EMI tenure and next due date
+      await _repository.markEmiAsPaid(emi);
+
+      // Then, add an expense with the actual paid amount
       final now = DateTime.now();
       final expense = Expense(
-        amount: emi.monthlyEmiAmount,
+        amount: paidAmount, // Use the user-provided amount
         category: 'EMI',
         date: now,
         monthYear: "${now.year}-${now.month.toString().padLeft(2, '0')}",
-        description: "${emi.loanName} EMI",
+        description: "${emi.loanName} EMI Payment",
       );
       await _ref.read(expenseListProvider.notifier).addExpense(expense);
+
+      // Finally, refresh the EMI list to reflect changes
       await _fetchEmis();
     } catch (e, s) {
       state = AsyncValue.error(e, s);

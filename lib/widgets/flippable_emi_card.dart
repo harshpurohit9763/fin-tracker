@@ -55,28 +55,56 @@ class _FlippableEmiCardState extends State<FlippableEmiCard>
   }
 
   void _markAsPaid(BuildContext context, WidgetRef ref) {
+    final amountController =
+        TextEditingController(text: widget.emi.monthlyEmiAmount.toString());
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Mark as Paid?'),
-        content: Text(
-            'Mark ${widget.emi.loanName} as paid for this month? This will update the due date and remaining tenure.'),
-        actions: [
-          TextButton(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.of(dialogContext).pop(),
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Confirm EMI Payment'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Enter the amount paid for ${widget.emi.loanName}.'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: amountController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Amount Paid',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            child: const Text('Confirm'),
-            onPressed: () {
-              ref.read(emiListProvider.notifier).markEmiAsPaid(widget.emi);
-              Navigator.of(dialogContext).pop();
-              // Flip back after action
-              _handleTap();
-            },
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+            TextButton(
+              child: const Text('Confirm'),
+              onPressed: () {
+                final paidAmount = double.tryParse(amountController.text);
+                if (paidAmount != null && paidAmount > 0) {
+                  ref
+                      .read(emiListProvider.notifier)
+                      .markEmiAsPaidWithAmount(widget.emi, paidAmount);
+                  Navigator.of(dialogContext).pop();
+                  // Flip back after action
+                  _handleTap();
+                } else {
+                  // Optionally, show a validation error
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid amount')),
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
