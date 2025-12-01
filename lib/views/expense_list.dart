@@ -19,43 +19,59 @@ class ExpenseListScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('All Expenses'),
         actions: [
-          // Year Dropdown
-          DropdownButton<int>(
-            value: ref.watch(selectedMonthYearProvider).year,
-            items: List.generate(
-              6, // Current year and 5 previous years
-              (index) => DateTime.now().year - index,
-            ).map((year) {
-              return DropdownMenuItem(
-                value: year,
-                child: Text(year.toString()),
-              );
-            }).toList(),
-            onChanged: (year) {
-              if (year != null) {
-                final currentSelection = ref.read(selectedMonthYearProvider);
-                ref.read(selectedMonthYearProvider.notifier).state =
-                    DateTime(year, currentSelection.month);
-              }
-            },
+          // Month Dropdown
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.grey),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: DropdownButton<int>(
+              value: ref.watch(selectedMonthYearProvider).month,
+              items: List.generate(12, (index) => index + 1).map((month) {
+                return DropdownMenuItem(
+                  value: month,
+                  child: Text(AppFormatters.getMonthName(month)),
+                );
+              }).toList(),
+              onChanged: (month) {
+                if (month != null) {
+                  final currentSelection = ref.read(selectedMonthYearProvider);
+                  ref.read(selectedMonthYearProvider.notifier).state =
+                      DateTime(currentSelection.year, month);
+                }
+              },
+              underline: Container(),
+            ),
           ),
           const SizedBox(width: 10),
-          // Month Dropdown
-          DropdownButton<int>(
-            value: ref.watch(selectedMonthYearProvider).month,
-            items: List.generate(12, (index) => index + 1).map((month) {
-              return DropdownMenuItem(
-                value: month,
-                child: Text(AppFormatters.getMonthName(month)),
-              );
-            }).toList(),
-            onChanged: (month) {
-              if (month != null) {
-                final currentSelection = ref.read(selectedMonthYearProvider);
-                ref.read(selectedMonthYearProvider.notifier).state =
-                    DateTime(currentSelection.year, month);
-              }
-            },
+          // Year Dropdown
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.grey),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: DropdownButton<int>(
+              value: ref.watch(selectedMonthYearProvider).year,
+              items: List.generate(
+                6, // Current year and 5 previous years
+                (index) => DateTime.now().year - index,
+              ).map((year) {
+                return DropdownMenuItem(
+                  value: year,
+                  child: Text(year.toString()),
+                );
+              }).toList(),
+              onChanged: (year) {
+                if (year != null) {
+                  final currentSelection = ref.read(selectedMonthYearProvider);
+                  ref.read(selectedMonthYearProvider.notifier).state =
+                      DateTime(year, currentSelection.month);
+                }
+              },
+              underline: Container(),
+            ),
           ),
           const SizedBox(width: 10),
         ],

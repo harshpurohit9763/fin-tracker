@@ -117,15 +117,33 @@ final incomeListProvider =
 final filteredIncomeListProvider =
     Provider.autoDispose<AsyncValue<List<Income>>>((ref) {
   final incomesAsyncValue = ref.watch(incomeListProvider);
-  final selectedMonthYear =
-      ref.watch(selectedMonthYearProvider); // Assuming this provider exists
+  final selectedMonthYear = ref.watch(
+      selectedMonthYearProvider); // Provider of the currently viewed month as DateTime
 
   return incomesAsyncValue.when(
     data: (incomes) {
-      final filteredIncomes = incomes.where((income) {
-        return income.monthYear ==
-            '${selectedMonthYear.year}-${selectedMonthYear.month.toString().padLeft(2, '0')}';
+      // Correctly compare years and months for filtering
+      final oneTimeIncomes = incomes.where((income) {
+        return !income.isMonthly &&
+            income.date.year == selectedMonthYear.year &&
+            income.date.month == selectedMonthYear.month;
       }).toList();
+
+      final recurringIncomes = incomes.where((income) {
+        if (!income.isMonthly) return false;
+
+        // Create DateTime objects for comparison, ignoring the day
+        final incomeMonth = DateTime(income.date.year, income.date.month);
+        final selectedMonth =
+            DateTime(selectedMonthYear.year, selectedMonthYear.month);
+
+        // A recurring income should appear if its start month is on or before the selected month
+        return !incomeMonth.isAfter(selectedMonth);
+      }).toList();
+
+      final filteredIncomes = [...oneTimeIncomes, ...recurringIncomes];
+      filteredIncomes.sort((a, b) => b.date.compareTo(a.date));
+
       return AsyncValue.data(filteredIncomes);
     },
     loading: () => const AsyncValue.loading(),
