@@ -150,12 +150,86 @@ class MonthlyReportScreen extends ConsumerWidget {
                   itemCount: expenses.length,
                   itemBuilder: (context, index) {
                     final expense = expenses[index];
+
+                    if (expense.transactionType == 'EMI' &&
+                        expense.scheduledAmount != null) {
+                      final difference =
+                          expense.amount - expense.scheduledAmount!;
+                      return Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                expense.description ?? 'EMI Payment',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Paid on: ${AppFormatters.formatDate(expense.date)}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              const Divider(height: 20),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Original EMI:'),
+                                  Text(AppFormatters.formatCurrency(
+                                      expense.scheduledAmount!, currency)),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Amount Paid:'),
+                                  Text(
+                                    AppFormatters.formatCurrency(
+                                        expense.amount, currency),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Difference:'),
+                                  Text(
+                                    AppFormatters.formatCurrency(
+                                        difference, currency),
+                                    style: TextStyle(
+                                      color: difference == 0
+                                          ? Colors.grey
+                                          : difference > 0
+                                              ? Colors.red
+                                              : Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    // Default view for other expenses
                     return Card(
                       child: ListTile(
                         title: Text(AppFormatters.formatCurrency(
                             expense.amount, currency)),
                         subtitle: Text(
                             '${expense.category} on ${AppFormatters.formatDate(expense.date)}'),
+                        trailing: expense.description != null
+                            ? Text(expense.description!)
+                            : null,
                       ),
                     );
                   },

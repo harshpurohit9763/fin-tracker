@@ -5,6 +5,8 @@ class Expense {
   final DateTime date;
   final String monthYear; // "YYYY-MM"
   final String? description;
+  final double? scheduledAmount; // Original scheduled amount for comparison
+  final String? transactionType; // e.g., 'EMI'
 
   Expense({
     this.id,
@@ -13,6 +15,8 @@ class Expense {
     required this.date,
     required this.monthYear,
     this.description,
+    this.scheduledAmount,
+    this.transactionType,
   });
 
   Map<String, dynamic> toMap() {
@@ -23,6 +27,8 @@ class Expense {
       'date': date.millisecondsSinceEpoch,
       'month_year': monthYear,
       'description': description,
+      'scheduled_amount': scheduledAmount,
+      'transaction_type': transactionType,
     };
   }
 
@@ -34,6 +40,8 @@ class Expense {
       date: DateTime.fromMillisecondsSinceEpoch(map['date']),
       monthYear: map['month_year'],
       description: map['description'],
+      scheduledAmount: map['scheduled_amount'],
+      transactionType: map['transaction_type'],
     );
   }
 
@@ -44,6 +52,8 @@ class Expense {
     DateTime? date,
     String? monthYear,
     String? description,
+    double? scheduledAmount,
+    String? transactionType,
   }) {
     return Expense(
       id: id ?? this.id,
@@ -52,6 +62,9 @@ class Expense {
       date: date ?? this.date,
       monthYear: monthYear ?? this.monthYear,
       description: description ?? this.description,
+      scheduledAmount: scheduledAmount ?? this.scheduledAmount,
+      transactionType: transactionType ?? this.transactionType,
     );
   }
 }
+

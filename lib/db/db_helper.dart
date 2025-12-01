@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 class DatabaseHelper {
   // Table and column names
   static const String dbName = 'expense_tracker.db';
-  static const int dbVersion = 2;
+  static const int dbVersion = 3;
 
   // Expenses Table
   static const String expensesTable = 'expenses';
@@ -18,6 +18,8 @@ class DatabaseHelper {
   static const String colDate = 'date'; // Unix Timestamp
   static const String colMonthYear = 'month_year'; // "YYYY-MM"
   static const String colDescription = 'description';
+  static const String colScheduledAmount = 'scheduled_amount';
+  static const String colTransactionType = 'transaction_type';
 
   // Income Table
   static const String incomeTable = 'income';
@@ -98,6 +100,13 @@ class DatabaseHelper {
       await db.execute(
           'ALTER TABLE $incomeTable ADD COLUMN $colIncomeSource TEXT;');
     }
+    if (oldVersion < 3) {
+      // Migrate from version 2 to 3
+      await db.execute(
+          'ALTER TABLE $expensesTable ADD COLUMN $colScheduledAmount REAL;');
+      await db.execute(
+          'ALTER TABLE $expensesTable ADD COLUMN $colTransactionType TEXT;');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -109,7 +118,9 @@ class DatabaseHelper {
         $colCategory TEXT NOT NULL,
         $colDate INTEGER NOT NULL,
         $colMonthYear TEXT NOT NULL,
-        $colDescription TEXT
+        $colDescription TEXT,
+        $colScheduledAmount REAL,
+        $colTransactionType TEXT
       )
     ''');
 

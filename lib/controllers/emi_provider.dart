@@ -78,11 +78,13 @@ class EmiListNotifier extends StateNotifier<AsyncValue<List<Emi>>> {
       // Then, add an expense with the actual paid amount
       final now = DateTime.now();
       final expense = Expense(
-        amount: paidAmount, // Use the user-provided amount
+        amount: paidAmount,
         category: 'EMI',
         date: now,
         monthYear: "${now.year}-${now.month.toString().padLeft(2, '0')}",
         description: "${emi.loanName} EMI Payment",
+        scheduledAmount: emi.monthlyEmiAmount, // Store original amount
+        transactionType: 'EMI', // Identify as an EMI transaction
       );
       await _ref.read(expenseListProvider.notifier).addExpense(expense);
 
