@@ -16,6 +16,7 @@ import 'package:personal_finance/widgets/flippable_emi_card.dart';
 import 'package:personal_finance/controllers/shared_preferences_provider.dart';
 import 'package:personal_finance/widgets/upcomming_emi.dart';
 import 'package:personal_finance/views/profile_screen.dart';
+import 'package:personal_finance/views/monthly_report_screen.dart';
 
 String _getGreeting() {
   final hour = DateTime.now().hour;
@@ -288,6 +289,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       childAspectRatio: 1.2,
                       children: [
                         _FeatureTile(
+                            title: 'Monthly Report',
+                            icon: Icons.calendar_month_outlined,
+                            color: Colors.red,
+                            onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const MonthlyReportScreen()))),
+                        _FeatureTile(
                             title: 'Budgets',
                             icon: Icons.track_changes_outlined,
                             color: Colors.orange,
@@ -315,7 +325,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     builder: (context) =>
                                         const NetWorthScreen()))),
                         _FeatureTile(
-                            title: 'Reports',
+                            title: 'Advance Reports',
                             icon: Icons.analytics_outlined,
                             color: Colors.purple,
                             onTap: () => Navigator.push(
