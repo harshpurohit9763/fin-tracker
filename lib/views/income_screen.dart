@@ -4,6 +4,7 @@ import 'package:personal_finance/helper/app_formater.dart';
 import 'package:personal_finance/views/add_income_screen.dart';
 import 'package:personal_finance/widgets/income_card.dart';
 import 'package:personal_finance/controllers/income_provider.dart';
+import 'package:personal_finance/widgets/month_year_selector.dart';
 import 'package:personal_finance/widgets/selected_month_year_provider.dart';
 
 class IncomeScreen extends ConsumerWidget {
@@ -16,62 +17,10 @@ class IncomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Monthly Income'),
-        actions: [
-          // Month Dropdown
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: DropdownButton<int>(
-              value: ref.watch(selectedMonthYearProvider).month,
-              items: List.generate(12, (index) => index + 1).map((month) {
-                return DropdownMenuItem(
-                  value: month,
-                  child: Text(AppFormatters.getMonthName(month)),
-                );
-              }).toList(),
-              onChanged: (month) {
-                if (month != null) {
-                  final currentSelection = ref.read(selectedMonthYearProvider);
-                  ref.read(selectedMonthYearProvider.notifier).state =
-                      DateTime(currentSelection.year, month);
-                }
-              },
-              underline: Container(),
-            ),
-          ),
-          const SizedBox(width: 10),
-          // Year Dropdown
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: DropdownButton<int>(
-              value: ref.watch(selectedMonthYearProvider).year,
-              items: List.generate(
-                6, // Current year and 5 previous years
-                (index) => DateTime.now().year - index,
-              ).map((year) {
-                return DropdownMenuItem(
-                  value: year,
-                  child: Text(year.toString()),
-                );
-              }).toList(),
-              onChanged: (year) {
-                if (year != null) {
-                  final currentSelection = ref.read(selectedMonthYearProvider);
-                  ref.read(selectedMonthYearProvider.notifier).state =
-                      DateTime(year, currentSelection.month);
-                }
-              },
-              underline: Container(),
-            ),
-          ),
-          const SizedBox(width: 10),
+        actions: const [
+          // Use the new widget in the AppBar
+          MonthYearSelector(placement: SelectorPlacement.appBar),
+          SizedBox(width: 10), // Maintain original spacing
         ],
       ),
       body: incomeListAsyncValue.when(

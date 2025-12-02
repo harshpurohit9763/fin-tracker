@@ -47,6 +47,7 @@ class _AdvancedReportsScreenState extends ConsumerState<AdvancedReportsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Advanced Reports'),
+        centerTitle: true, // Center the title for better aesthetics
         actions: [
           IconButton(
             icon: const Icon(Icons.download_outlined),
@@ -87,23 +88,53 @@ class _AdvancedReportsScreenState extends ConsumerState<AdvancedReportsScreen> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: const [
-          _FilterBar(),
-          SizedBox(height: 24),
-          _IncomeVsExpenseCard(),
-          SizedBox(height: 24),
-          _AssetsSummaryCard(),
-          SizedBox(height: 24),
-          _RecurringCostsCard(),
-          SizedBox(height: 24),
-          _BudgetSummaryCard(),
-          SizedBox(height: 24),
-          _CategoryBreakdownCard(),
-          SizedBox(height: 24),
-          _TransactionListCard(),
-        ],
+      body: SingleChildScrollView(
+        child: Center(
+          child: Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 600), // Equivalent to max-w-lg
+            margin: const EdgeInsets.all(16.0), // Equivalent to mx-auto p-6
+            padding: const EdgeInsets.all(24.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(40.0), // rounded-[40px]
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1), // shadow-2xl (approx)
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                ),
+              ],
+              border: Border.all(color: Colors.white, width: 1.0), // border border-white
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Advanced Reports',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontFamily: 'sans-serif', // font-sans
+                      ),
+                ),
+                const SizedBox(height: 24), // mb-6
+                const _FilterBar(),
+                const SizedBox(height: 24),
+                const _IncomeVsExpenseCard(),
+                const SizedBox(height: 24),
+                const _AssetsSummaryCard(),
+                const SizedBox(height: 24),
+                const _RecurringCostsCard(),
+                const SizedBox(height: 24),
+                const _BudgetSummaryCard(), // Keep existing Flutter functionality
+                const SizedBox(height: 24),
+                const _CategoryBreakdownCard(),
+                const SizedBox(height: 24),
+                const _TransactionListCard(),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -135,10 +166,39 @@ class _FilterBar extends ConsumerWidget {
     final rangeType = ref.watch(reportDateRangeTypeProvider);
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
+      // Equivalent to Card className="p-4 mb-6 rounded-2xl shadow-sm border border-indigo-50"
+      margin: EdgeInsets.zero, // Remove default Card margin
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+      ),
+      elevation: 1, // shadow-sm
+      color: Theme.of(context).cardColor,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+        ),
+        padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+            Row(
+              children: [
+                Icon(Icons.calendar_today, size: 18, color: Colors.blueGrey.shade700), // Calendar icon
+                const SizedBox(width: 8), // gap-2
+                Text(
+                  'Report Period',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold, // font-bold
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12), // mb-3 (approx)
+
+            // Original content of _FilterBar
             // Date Range and Account Filters
             Row(
               children: [
@@ -252,14 +312,38 @@ class _IncomeVsExpenseCard extends ConsumerWidget {
     final currency = ref.watch(currencyProvider);
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      // Equivalent to Card className="p-4 mb-6 rounded-2xl shadow-sm border border-indigo-50"
+      margin: EdgeInsets.zero, // Remove default Card margin
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+      ),
+      elevation: 1, // shadow-sm
+      color: Theme.of(context).cardColor,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+        ),
+        padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Income vs. Expense',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
+            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+            Row(children: [
+                Icon(Icons.account_balance_wallet, size: 18, color: Colors.blueGrey.shade700), // Wallet icon
+                const SizedBox(width: 8), // gap-2
+                Text(
+                  'Income vs Expense',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold, // font-bold
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ],
+            ), // Closing parenthesis for the Row widget
+            const SizedBox(height: 12), // mb-3 (approx)
+
+            // Original content of _IncomeVsExpenseCard
             breakdownAsync.when(
               data: (data) {
                 final totalExpenses = data.needs + data.wants;
@@ -316,11 +400,15 @@ class _IncomeVsExpenseCard extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(title, style: Theme.of(context).textTheme.bodyLarge),
-        Text(value,
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
-                ?.copyWith(fontWeight: FontWeight.bold, color: color)),
+        Flexible(
+          child: Text(value,
+              textAlign: TextAlign.end,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyLarge
+                  ?.copyWith(fontWeight: FontWeight.bold, color: color, decoration: TextDecoration.none),
+              overflow: TextOverflow.ellipsis),
+        ),
       ],
     );
   }
@@ -336,14 +424,39 @@ class _AssetsSummaryCard extends ConsumerWidget {
     final currency = ref.watch(currencyProvider);
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      // Equivalent to Card className="p-4 mb-6 rounded-2xl shadow-sm border border-indigo-50"
+      margin: EdgeInsets.zero, // Remove default Card margin
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+      ),
+      elevation: 1, // shadow-sm
+      color: Theme.of(context).cardColor,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+        ),
+        padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Asset Summary',
-                style: Theme.of(context).textTheme.titleLarge),
-            const Divider(height: 24),
+            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+            Row(
+              children: [
+                Icon(Icons.bar_chart, size: 18, color: Colors.blueGrey.shade700), // BarChart3 icon
+                const SizedBox(width: 8), // gap-2
+                Text(
+                  'Asset Summary',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold, // font-bold
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12), // mb-3 (approx)
+
+            // Original content of _AssetsSummaryCard
             assetsAsync.when(
               data: (assets) {
                 if (assets.isEmpty) return const Text('No assets added.');
@@ -384,13 +497,39 @@ class _CategoryBreakdownCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      // Equivalent to Card className="p-4 mb-6 rounded-2xl shadow-sm border border-indigo-50"
+      margin: EdgeInsets.zero, // Remove default Card margin
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+      ),
+      elevation: 1, // shadow-sm
+      color: Theme.of(context).cardColor,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+        ),
+        padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Expense Breakdown',
-                style: Theme.of(context).textTheme.titleLarge),
+            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+            Row(
+              children: [
+                Icon(Icons.pie_chart, size: 18, color: Colors.blueGrey.shade700), // PieChart icon
+                const SizedBox(width: 8), // gap-2
+                Text(
+                  'Expense Breakdown',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold, // font-bold
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12), // mb-3 (approx)
+
+            // Original content of _CategoryBreakdownCard
             const SizedBox(height: 16),
             const CategoryPieChartWidget(),
           ],
@@ -410,14 +549,39 @@ class _RecurringCostsCard extends ConsumerWidget {
     final currency = ref.watch(currencyProvider);
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      // Equivalent to Card className="p-4 mb-6 rounded-2xl shadow-sm border border-indigo-50"
+      margin: EdgeInsets.zero, // Remove default Card margin
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+      ),
+      elevation: 1, // shadow-sm
+      color: Theme.of(context).cardColor,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+        ),
+        padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Recurring Costs (Monthly)',
-                style: Theme.of(context).textTheme.titleLarge),
-            const Divider(height: 24),
+            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+            Row(
+              children: [
+                Icon(Icons.repeat, size: 18, color: Colors.blueGrey.shade700), // Repeat icon
+                const SizedBox(width: 8), // gap-2
+                Text(
+                  'Recurring Costs',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold, // font-bold
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12), // mb-3 (approx)
+
+            // Original content of _RecurringCostsCard
             subsAsync.when(
               data: (subs) {
                 if (subs.isEmpty) return const Text('No subscriptions added.');
@@ -461,14 +625,39 @@ class _BudgetSummaryCard extends ConsumerWidget {
     final currency = ref.watch(currencyProvider);
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      // Equivalent to Card className="p-4 mb-6 rounded-2xl shadow-sm border border-indigo-50"
+      margin: EdgeInsets.zero, // Remove default Card margin
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+      ),
+      elevation: 1, // shadow-sm
+      color: Theme.of(context).cardColor,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+        ),
+        padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Budget Performance (This Month)',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
+            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+            Row(
+              children: [
+                Icon(Icons.attach_money, size: 18, color: Colors.blueGrey.shade700), // Custom icon for budget
+                const SizedBox(width: 8), // gap-2
+                Text(
+                  'Budget Performance',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold, // font-bold
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12), // mb-3 (approx)
+
+            // Original content of _BudgetSummaryCard
             overallBudgetAsync.when(
               data: (data) {
                 final spent = data['spent']!;
@@ -507,13 +696,39 @@ class _TransactionListCard extends ConsumerWidget {
     final currency = ref.watch(currencyProvider);
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      // Equivalent to Card className="p-4 rounded-2xl shadow-sm border border-indigo-50"
+      margin: EdgeInsets.zero, // Remove default Card margin
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+      ),
+      elevation: 1, // shadow-sm
+      color: Theme.of(context).cardColor,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+        ),
+        padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Transactions', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
+            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+            Row(
+              children: [
+                Icon(Icons.list, size: 18, color: Colors.blueGrey.shade700), // List icon
+                const SizedBox(width: 8), // gap-2
+                Text(
+                  'Transactions',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold, // font-bold
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12), // mb-3 (approx)
+
+            // Original content of _TransactionListCard
             expensesAsync.when(
               data: (expenses) {
                 return incomesAsync.when(

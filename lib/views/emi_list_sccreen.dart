@@ -1,3 +1,5 @@
+import 'dart:ui';
+import 'package:intl/intl.dart'; // Added import for DateFormat if needed later, good practice.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/views/add_emi_screen.dart';
@@ -158,33 +160,88 @@ class EmiListScreen extends ConsumerWidget {
   }
 
   void _markAsPaid(BuildContext context, WidgetRef ref, Emi emi) {
+    final amountController =
+        TextEditingController(text: emi.monthlyEmiAmount.toStringAsFixed(2));
     showDialog(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Mark as Paid?'),
-          content: Text(
-            'Mark ${emi.loanName} as paid for this month? This will reduce the remaining tenure and set the next due date.',
+      builder: (dialogContext) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: AlertDialog(
+            backgroundColor: Colors.grey[900]?.withOpacity(0.8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: BorderSide(color: Colors.white.withOpacity(0.2)),
+            ),
+            title: const Text(
+              'Confirm EMI Payment',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Enter the amount paid for ${emi.loanName}.',
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: amountController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Amount Paid',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          BorderSide(color: Colors.white.withOpacity(0.3)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                child: const Text('Cancel',
+                    style: TextStyle(color: Colors.white70)),
+                onPressed: () => Navigator.of(dialogContext).pop(),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6B4BEE),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Confirm',
+                    style: TextStyle(color: Colors.white)),
+                onPressed: () {
+                  final paidAmount = double.tryParse(amountController.text);
+                  if (paidAmount != null && paidAmount > 0) {
+                    ref
+                        .read(emiListProvider.notifier)
+                        .markEmiAsPaidWithAmount(emi, paidAmount);
+                    Navigator.of(dialogContext).pop();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Please enter a valid amount')),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Confirm'),
-              onPressed: () {
-                ref.read(emiListProvider.notifier).markEmiAsPaid(emi);
-                // Invalidate dashboard providers
-                // ref.invalidate(dashboardMetricsProvider);
-                Navigator.of(dialogContext).pop();
-              },
-            ),
-          ],
         );
       },
-    );
+    ).then((_) => amountController.dispose()); // Dispose the controller when the dialog is closed.
   }
 }
+

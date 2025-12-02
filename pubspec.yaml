@@ -55,6 +55,7 @@ flutter:
     - assets/
     - assets/icon/
     - assets/models/rosetta.tflite
+    - assets/noise_texture.png
 
 
 flutter_launcher_icons:

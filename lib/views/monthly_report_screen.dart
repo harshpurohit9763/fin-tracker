@@ -5,10 +5,12 @@ import 'package:personal_finance/controllers/income_provider.dart';
 import 'package:personal_finance/controllers/shared_preferences_provider.dart';
 import 'package:personal_finance/helper/app_formater.dart';
 import 'package:personal_finance/widgets/income_card.dart';
+import 'package:personal_finance/widgets/month_year_selector.dart';
 import 'package:personal_finance/widgets/selected_month_year_provider.dart'
     hide selectedMonthYearProvider;
 import 'package:personal_finance/widgets/expense_list_item.dart';
 import 'package:personal_finance/widgets/income_expense_chart.dart';
+import 'package:intl/intl.dart';
 
 class MonthlyReportScreen extends ConsumerWidget {
   const MonthlyReportScreen({super.key});
@@ -32,93 +34,89 @@ class MonthlyReportScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Monthly Report'),
-      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Month/Year Selector
+            const SizedBox(height: 32), // Spacer for top
+
+            // Header with "Monthly Report" title and Month/Year selector
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Month Dropdown
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  child: DropdownButton<int>(
-                    value: selectedMonthYear.month,
-                    items: List.generate(12, (index) => index + 1).map((month) {
-                      return DropdownMenuItem(
-                        value: month,
-                        child: Text(AppFormatters.getMonthName(month)),
-                      );
-                    }).toList(),
-                    onChanged: (month) {
-                      if (month != null) {
-                        ref.read(selectedMonthYearProvider.notifier).state =
-                            DateTime(selectedMonthYear.year, month);
-                      }
-                    },
-                    underline: Container(),
-                  ),
+                Text(
+                  'Monthly Report',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                 ),
-                const SizedBox(width: 10),
-                // Year Dropdown
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  child: DropdownButton<int>(
-                    value: selectedMonthYear.year,
-                    items: List.generate(
-                      6, // Current year and 5 previous years
-                      (index) => DateTime.now().year - index,
-                    ).map((year) {
-                      return DropdownMenuItem(
-                        value: year,
-                        child: Text(year.toString()),
-                      );
-                    }).toList(),
-                    onChanged: (year) {
-                      if (year != null) {
-                        ref.read(selectedMonthYearProvider.notifier).state =
-                            DateTime(year, selectedMonthYear.month);
-                      }
-                    },
-                    underline: Container(),
-                  ),
-                ),
+                MonthYearSelector(
+                    placement: SelectorPlacement.body), // Use the new widget
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // Income vs Expense Chart
-            IncomeExpenseChart(
-              totalIncome: totalIncome,
-              totalExpense: totalExpense,
+            Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+                boxShadow: [
+                  BoxShadow(
+                    color:
+                        Theme.of(context).colorScheme.shadow.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Income vs Expense',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 160,
+                    child: IncomeExpenseChart(
+                      totalIncome: totalIncome,
+                      totalExpense: totalExpense,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // Income Section
             Text(
               'Income',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             incomesAsyncValue.when(
               data: (incomes) {
                 if (incomes.isEmpty) {
-                  return const Text('No income for this month.');
+                  return Text(
+                    'No income for this month.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  );
                 }
                 return ListView.builder(
                   shrinkWrap: true,
@@ -134,18 +132,26 @@ class MonthlyReportScreen extends ConsumerWidget {
               error: (err, stack) => Center(child: Text('Error: $err')),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // Expense Section
             Text(
               'Expenses',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             expensesAsyncValue.when(
               data: (expenses) {
                 if (expenses.isEmpty) {
-                  return const Text('No expenses for this month.');
+                  return Text(
+                    'No expenses for this month.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  );
                 }
                 return ListView.builder(
                   shrinkWrap: true,

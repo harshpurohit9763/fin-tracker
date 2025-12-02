@@ -18,44 +18,15 @@ class IncomeExpenseChart extends StatelessWidget {
         (totalIncome > totalExpense ? totalIncome : totalExpense) * 1.2;
 
     return SizedBox(
-      height: 250,
+      height: 160, // Adjusted height for a more compact look
       child: BarChart(
         BarChartData(
           maxY: maxY,
           barTouchData: BarTouchData(
-            touchTooltipData: BarTouchTooltipData(
-              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                String title;
-                switch (group.x.toInt()) {
-                  case 0:
-                    title = 'Income';
-                    break;
-                  case 1:
-                    title = 'Expense';
-                    break;
-                  default:
-                    throw Error();
-                }
-                return BarTooltipItem(
-                  '$title\n',
-                  TextStyle(
-                    color: theme.colorScheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: rod.toY.toStringAsFixed(2),
-                      style: TextStyle(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+            enabled: false, // Disable touch tooltip for simplicity, matching HTML
           ),
           titlesData: FlTitlesData(
+            show: true,
             topTitles: const AxisTitles(
               sideTitles: SideTitles(showTitles: false),
             ),
@@ -68,8 +39,10 @@ class IncomeExpenseChart extends StatelessWidget {
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
+                reservedSize: 20, // Reduced reserved space
                 getTitlesWidget: (value, meta) {
                   String text;
+                  Color textColor = theme.colorScheme.onSurfaceVariant;
                   switch (value.toInt()) {
                     case 0:
                       text = 'Income';
@@ -80,19 +53,20 @@ class IncomeExpenseChart extends StatelessWidget {
                     default:
                       return Container();
                   }
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(text),
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    space: 4,
+                    child: Text(text, style: TextStyle(color: textColor, fontSize: 10)),
                   );
                 },
               ),
             ),
           ),
-          borderData: FlBorderData(show: false),
-          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false), // Remove border
+          gridData: const FlGridData(show: false), // Remove grid lines
           barGroups: [
-            _buildBarGroup(0, totalIncome, Colors.green),
-            _buildBarGroup(1, totalExpense, Colors.red),
+            _buildBarGroup(0, totalIncome, theme.colorScheme.primaryContainer), // Accent color for income
+            _buildBarGroup(1, totalExpense, theme.colorScheme.error), // Error color for expense
           ],
         ),
       ),
@@ -106,8 +80,8 @@ class IncomeExpenseChart extends StatelessWidget {
         BarChartRodData(
           toY: y,
           color: color,
-          width: 30,
-          borderRadius: BorderRadius.circular(4),
+          width: 24, // Adjusted width
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(6)), // Rounded top
         ),
       ],
     );

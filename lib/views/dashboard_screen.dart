@@ -101,7 +101,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ?
                       // Calculate height: card height + overlap for other cards
                       (MediaQuery.of(context).size.width - 48) / 1.586 +
-                          (emis.length * 40)
+                          (emis.length * 10)
                       : kToolbarHeight,
                   flexibleSpace: FlexibleSpaceBar(
                     titlePadding:
@@ -159,114 +159,78 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 delegate: SliverChildListDelegate(
                   [
                     // Key Metrics Cards
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        bool isWide = constraints.maxWidth > 600;
-                        if (isWide) {
-                          return Row(
-                            children: [
-                              Expanded(
-                                child: totalSpendingAsync.when(
-                                  data: (total) => MetricCard(
-                                    title: "This Month's Spending",
-                                    value: AppFormatters.formatCurrency(
-                                      total,
-                                      currency,
-                                    ),
-                                    icon: Icons.show_chart,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                  ),
-                                  loading: () => const MetricCard(
-                                      title: "This Month's Spending",
-                                      value: '...',
-                                      icon: Icons.show_chart,
-                                      color: Colors.grey),
-                                  error: (e, s) => const MetricCard(
-                                      title: "This Month's Spending",
-                                      value: 'Error',
-                                      icon: Icons.error,
-                                      color: Colors.redAccent),
-                                ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: totalSpendingAsync.when(
+                            data: (total) => MetricCard(
+                              title: "Month's Spending",
+                              value: AppFormatters.formatCurrency(
+                                total,
+                                currency,
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: upcomingEmisAsync.when(
-                                  data: (count) => MetricCard(
-                                    title: 'EMIs Due This Week',
-                                    value: '$count Payments',
-                                    icon: Icons.payment,
-                                    color:
-                                        Theme.of(context).colorScheme.secondary,
-                                  ),
-                                  loading: () => const MetricCard(
-                                      title: 'EMIs Due This Week',
-                                      value: '...',
-                                      icon: Icons.payment,
-                                      color: Colors.grey),
-                                  error: (e, s) => const MetricCard(
-                                      title: 'EMIs Due This Week',
-                                      value: 'Error',
-                                      icon: Icons.error,
-                                      color: Colors.redAccent),
-                                ),
-                              ),
-                            ],
-                          );
-                        } else {
-                          return Column(
-                            children: [
-                              totalSpendingAsync.when(
-                                data: (total) => MetricCard(
-                                  title: "This Month's Spending",
-                                  value: AppFormatters.formatCurrency(
-                                      total, currency),
-                                  icon: Icons.show_chart,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                loading: () => const MetricCard(
-                                    title: "This Month's Spending",
-                                    value: '...',
-                                    icon: Icons.show_chart,
-                                    color: Colors.grey),
-                                error: (e, s) => const MetricCard(
-                                    title: "This Month's Spending",
-                                    value: 'Error',
-                                    icon: Icons.error,
-                                    color: Colors.redAccent),
-                              ),
-                              const SizedBox(height: 16),
-                              upcomingEmisAsync.when(
-                                data: (count) => MetricCard(
-                                  title: 'EMIs Due This Week',
-                                  value: '$count Payments',
-                                  icon: Icons.payment,
-                                  color:
-                                      Theme.of(context).colorScheme.secondary,
-                                ),
-                                loading: () => const MetricCard(
-                                    title: 'EMIs Due This Week',
-                                    value: '...',
-                                    icon: Icons.payment,
-                                    color: Colors.grey),
-                                error: (e, s) => const MetricCard(
-                                    title: 'EMIs Due This Week',
-                                    value: 'Error',
-                                    icon: Icons.error,
-                                    color: Colors.redAccent),
-                              ),
-                            ],
-                          );
-                        }
-                      },
+                              icon: Icons.show_chart,
+                              color: Theme.of(context).colorScheme.primary,
+                              onIconTap: () {
+                                debugPrint('This Month\'s Spending icon tapped!');
+                                // Navigate to a detailed spending report or similar
+                              },
+                            ),
+                            loading: () => MetricCard(
+                                title: "Month's Spending",
+                                value: '...',
+                                icon: Icons.show_chart,
+                                color: Colors.grey,
+                                onIconTap: () {
+                                  debugPrint('This Month\'s Spending icon tapped!');
+                                }),
+                            error: (e, s) => MetricCard(
+                                title: "Month's Spending",
+                                value: 'Error',
+                                icon: Icons.error,
+                                color: Colors.redAccent,
+                                onIconTap: () {
+                                  debugPrint('This Month\'s Spending icon tapped!');
+                                }),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: upcomingEmisAsync.when(
+                            data: (count) => MetricCard(
+                              title: 'EMIs Due This Week',
+                              value: '$count Payments',
+                              icon: Icons.payment,
+                              color: Theme.of(context).colorScheme.secondary,
+                              onIconTap: () {
+                                debugPrint('EMIs Due This Week icon tapped!');
+                                // Navigate to the EMI list screen or similar
+                              },
+                            ),
+                            loading: () => MetricCard(
+                                title: 'EMIs Due This Week',
+                                value: '...',
+                                icon: Icons.payment,
+                                color: Colors.grey,
+                                onIconTap: () {
+                                  debugPrint('EMIs Due This Week icon tapped!');
+                                }),
+                            error: (e, s) => MetricCard(
+                                title: 'EMIs Due This Week',
+                                value: 'Error',
+                                icon: Icons.error,
+                                color: Colors.redAccent,
+                                onIconTap: () {
+                                  debugPrint('EMIs Due This Week icon tapped!');
+                                }),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 24),
 
                     // Monthly Trend Bar Chart
-                    Text('Monthly Spending Trend (Last 6 Months)',
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 16),
-                    const SizedBox(height: 300, child: MonthlyTrendChart()),
+                    const MonthlyTrendChart(),
                     const SizedBox(height: 24),
 
                     // EMI Due Panel
@@ -342,38 +306,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (_showFabOptions) ...[
-            FloatingActionButton.extended(
-              heroTag: 'addExpenseFab',
-              onPressed: () {
-                setState(() {
-                  _showFabOptions = false;
-                });
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const AddExpenseScreen()),
-                );
-              },
-              label: const Text('Add Expense'),
-              icon: const Icon(Icons.remove),
-            ),
-            const SizedBox(height: 10),
-          ],
-          FloatingActionButton(
-            onPressed: () {
-              setState(() {
-                _showFabOptions = !_showFabOptions;
-              });
-            },
-            child: Icon(_showFabOptions ? Icons.close : Icons.add),
-          ),
-        ],
-      ),
+
     );
   }
 }
@@ -383,7 +316,7 @@ class _FeatureTile extends StatelessWidget {
   final String title;
   final IconData icon;
   final VoidCallback onTap;
-  final Color color;
+  final Color color; // This color will be used for the icon background
 
   const _FeatureTile({
     required this.title,
@@ -394,24 +327,44 @@ class _FeatureTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 40, color: color),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color, // Use the provided color for the background
               ),
-            ],
-          ),
+              child: Icon(icon, size: 28, color: Colors.white), // Icon color is white
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+            ),
+          ],
         ),
       ),
     );
