@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_finance/controllers/dashboard_provider.dart';
+import 'package:personal_finance/controllers/shared_preferences_provider.dart';
+import 'package:personal_finance/helper/app_formater.dart';
 
 class MonthlyTrendChart extends ConsumerWidget {
   const MonthlyTrendChart({super.key});
@@ -11,6 +13,7 @@ class MonthlyTrendChart extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final spendingAsync = ref.watch(last6MonthsSpendingProvider);
     final currentMonthSpendingAsync = ref.watch(currentMonthSpendingProvider);
+    final currency = ref.watch(currencyProvider);
 
     return spendingAsync.when(
       data: (data) {
@@ -88,7 +91,7 @@ class MonthlyTrendChart extends ConsumerWidget {
                 children: [
                   currentMonthSpendingAsync.when(
                     data: (total) => Text(
-                      NumberFormat.compactSimpleCurrency().format(total),
+                      AppFormatters.formatCurrency(total, currency),
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurface,
@@ -145,9 +148,7 @@ class MonthlyTrendChart extends ConsumerWidget {
                             ),
                             children: [
                               TextSpan(
-                                text: NumberFormat.simpleCurrency(
-                                  decimalDigits: 0,
-                                ).format(rod.toY),
+                                text: AppFormatters.formatCurrency(rod.toY, currency),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.normal,

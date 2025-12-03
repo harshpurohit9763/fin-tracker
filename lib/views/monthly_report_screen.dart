@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/controllers/expense_provider.dart';
@@ -40,22 +41,29 @@ class MonthlyReportScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 32), // Spacer for top
-
-            // Header with "Monthly Report" title and Month/Year selector
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Monthly Report',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                CupertinoNavigationBarBackButton(
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
-                MonthYearSelector(
-                    placement: SelectorPlacement.body), // Use the new widget
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Monthly Report',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                  ),
+                )
               ],
             ),
+
+            // Header with "Monthly Report" title and Month/Year selector
+
+            const SizedBox(height: 16),
+            MonthYearSelector(
+                placement: SelectorPlacement.body), // Use the new widget
             const SizedBox(height: 32),
 
             // Income vs Expense Chart
@@ -79,12 +87,15 @@ class MonthlyReportScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Income vs Expense',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Income vs Expense',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
@@ -100,12 +111,15 @@ class MonthlyReportScreen extends ConsumerWidget {
             const SizedBox(height: 32),
 
             // Income Section
-            Text(
-              'Income',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'Income',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+              ),
             ),
             const SizedBox(height: 12),
             incomesAsyncValue.when(
@@ -135,12 +149,15 @@ class MonthlyReportScreen extends ConsumerWidget {
             const SizedBox(height: 32),
 
             // Expense Section
-            Text(
-              'Expenses',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'Expenses',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+              ),
             ),
             const SizedBox(height: 12),
             expensesAsyncValue.when(

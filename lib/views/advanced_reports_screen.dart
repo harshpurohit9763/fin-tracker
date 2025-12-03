@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/helper/app_formater.dart';
@@ -46,6 +47,10 @@ class _AdvancedReportsScreenState extends ConsumerState<AdvancedReportsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: CupertinoNavigationBarBackButton(
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: const Text('Advanced Reports'),
         centerTitle: true, // Center the title for better aesthetics
         actions: [
@@ -92,7 +97,8 @@ class _AdvancedReportsScreenState extends ConsumerState<AdvancedReportsScreen> {
         child: Center(
           child: Container(
             width: double.infinity,
-            constraints: const BoxConstraints(maxWidth: 600), // Equivalent to max-w-lg
+            constraints:
+                const BoxConstraints(maxWidth: 600), // Equivalent to max-w-lg
             margin: const EdgeInsets.all(16.0), // Equivalent to mx-auto p-6
             padding: const EdgeInsets.all(24.0),
             decoration: BoxDecoration(
@@ -104,7 +110,8 @@ class _AdvancedReportsScreenState extends ConsumerState<AdvancedReportsScreen> {
                   spreadRadius: 2,
                 ),
               ],
-              border: Border.all(color: Colors.white, width: 1.0), // border border-white
+              border: Border.all(
+                  color: Colors.white, width: 1.0), // border border-white
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,7 +183,8 @@ class _FilterBar extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+          border: Border.all(
+              color: Colors.indigo.shade50), // border border-indigo-50
         ),
         padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
@@ -185,7 +193,8 @@ class _FilterBar extends ConsumerWidget {
             // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
             Row(
               children: [
-                Icon(Icons.calendar_today, size: 18, color: Colors.blueGrey.shade700), // Calendar icon
+                Icon(Icons.calendar_today,
+                    size: 18, color: Colors.blueGrey.shade700), // Calendar icon
                 const SizedBox(width: 8), // gap-2
                 Text(
                   'Report Period',
@@ -322,15 +331,18 @@ class _IncomeVsExpenseCard extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+          border: Border.all(
+              color: Colors.indigo.shade50), // border border-indigo-50
         ),
         padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
-            Row(children: [
-                Icon(Icons.account_balance_wallet, size: 18, color: Colors.blueGrey.shade700), // Wallet icon
+            Row(
+              children: [
+                Icon(Icons.account_balance_wallet,
+                    size: 18, color: Colors.blueGrey.shade700), // Wallet icon
                 const SizedBox(width: 8), // gap-2
                 Text(
                   'Income vs Expense',
@@ -403,10 +415,10 @@ class _IncomeVsExpenseCard extends ConsumerWidget {
         Flexible(
           child: Text(value,
               textAlign: TextAlign.end,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.copyWith(fontWeight: FontWeight.bold, color: color, decoration: TextDecoration.none),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                  decoration: TextDecoration.none),
               overflow: TextOverflow.ellipsis),
         ),
       ],
@@ -434,7 +446,8 @@ class _AssetsSummaryCard extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+          border: Border.all(
+              color: Colors.indigo.shade50), // border border-indigo-50
         ),
         padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
@@ -443,7 +456,9 @@ class _AssetsSummaryCard extends ConsumerWidget {
             // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
             Row(
               children: [
-                Icon(Icons.bar_chart, size: 18, color: Colors.blueGrey.shade700), // BarChart3 icon
+                Icon(Icons.bar_chart,
+                    size: 18,
+                    color: Colors.blueGrey.shade700), // BarChart3 icon
                 const SizedBox(width: 8), // gap-2
                 Text(
                   'Asset Summary',
@@ -507,7 +522,8 @@ class _CategoryBreakdownCard extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+          border: Border.all(
+              color: Colors.indigo.shade50), // border border-indigo-50
         ),
         padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
@@ -516,7 +532,8 @@ class _CategoryBreakdownCard extends ConsumerWidget {
             // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
             Row(
               children: [
-                Icon(Icons.pie_chart, size: 18, color: Colors.blueGrey.shade700), // PieChart icon
+                Icon(Icons.pie_chart,
+                    size: 18, color: Colors.blueGrey.shade700), // PieChart icon
                 const SizedBox(width: 8), // gap-2
                 Text(
                   'Expense Breakdown',
@@ -559,7 +576,8 @@ class _RecurringCostsCard extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+          border: Border.all(
+              color: Colors.indigo.shade50), // border border-indigo-50
         ),
         padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
@@ -568,7 +586,8 @@ class _RecurringCostsCard extends ConsumerWidget {
             // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
             Row(
               children: [
-                Icon(Icons.repeat, size: 18, color: Colors.blueGrey.shade700), // Repeat icon
+                Icon(Icons.repeat,
+                    size: 18, color: Colors.blueGrey.shade700), // Repeat icon
                 const SizedBox(width: 8), // gap-2
                 Text(
                   'Recurring Costs',
@@ -635,7 +654,8 @@ class _BudgetSummaryCard extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+          border: Border.all(
+              color: Colors.indigo.shade50), // border border-indigo-50
         ),
         padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
@@ -644,7 +664,9 @@ class _BudgetSummaryCard extends ConsumerWidget {
             // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
             Row(
               children: [
-                Icon(Icons.attach_money, size: 18, color: Colors.blueGrey.shade700), // Custom icon for budget
+                Icon(Icons.attach_money,
+                    size: 18,
+                    color: Colors.blueGrey.shade700), // Custom icon for budget
                 const SizedBox(width: 8), // gap-2
                 Text(
                   'Budget Performance',
@@ -683,8 +705,6 @@ class _BudgetSummaryCard extends ConsumerWidget {
   }
 }
 
-
-
 /// Card for displaying a detailed list of transactions.
 class _TransactionListCard extends ConsumerWidget {
   const _TransactionListCard();
@@ -706,7 +726,8 @@ class _TransactionListCard extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.indigo.shade50), // border border-indigo-50
+          border: Border.all(
+              color: Colors.indigo.shade50), // border border-indigo-50
         ),
         padding: const EdgeInsets.all(16.0), // p-4
         child: Column(
@@ -715,7 +736,8 @@ class _TransactionListCard extends ConsumerWidget {
             // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
             Row(
               children: [
-                Icon(Icons.list, size: 18, color: Colors.blueGrey.shade700), // List icon
+                Icon(Icons.list,
+                    size: 18, color: Colors.blueGrey.shade700), // List icon
                 const SizedBox(width: 8), // gap-2
                 Text(
                   'Transactions',

@@ -1,4 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/helper/app_formater.dart';
@@ -21,13 +22,21 @@ class InsightsScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 32), // Top spacing
-            Text(
-              'Financial Insights',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+            Row(
+              children: [
+                CupertinoNavigationBarBackButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                Text(
+                  'Financial Insights',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ],
             ),
+
             const SizedBox(height: 32),
             const _NeedsVsWantsCard(),
             const SizedBox(height: 24),
@@ -58,7 +67,9 @@ class _NeedsVsWantsCard extends ConsumerWidget {
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+              border: Border.all(
+                  color:
+                      Theme.of(context).colorScheme.outline.withOpacity(0.1)),
               boxShadow: [
                 BoxShadow(
                   color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
@@ -84,7 +95,8 @@ class _NeedsVsWantsCard extends ConsumerWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+            border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
             boxShadow: [
               BoxShadow(
                 color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
@@ -101,7 +113,7 @@ class _NeedsVsWantsCard extends ConsumerWidget {
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurface,
                       )),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               SizedBox(
                 height: 150,
                 child: _buildPieChart(data, context),
@@ -136,7 +148,8 @@ class _NeedsVsWantsCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
           boxShadow: [
             BoxShadow(
               color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
@@ -153,7 +166,8 @@ class _NeedsVsWantsCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
           boxShadow: [
             BoxShadow(
               color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
@@ -183,14 +197,16 @@ class _NeedsVsWantsCard extends ConsumerWidget {
             title: '${(data.needs / data.total * 100).toStringAsFixed(0)}%',
             color: theme.colorScheme.primary, // Using primary accent color
             radius: 60, // Adjusted radius
-            titleStyle: theme.textTheme.bodySmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+            titleStyle: theme.textTheme.bodySmall
+                ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           PieChartSectionData(
             value: data.wants,
             title: '${(data.wants / data.total * 100).toStringAsFixed(0)}%',
             color: theme.colorScheme.secondary, // Using secondary accent color
             radius: 60, // Adjusted radius
-            titleStyle: theme.textTheme.bodySmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+            titleStyle: theme.textTheme.bodySmall
+                ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           PieChartSectionData(
             value: data.investments,
@@ -198,7 +214,8 @@ class _NeedsVsWantsCard extends ConsumerWidget {
                 '${(data.investments / data.total * 100).toStringAsFixed(0)}%',
             color: theme.colorScheme.tertiary, // Using tertiary accent color
             radius: 60, // Adjusted radius
-            titleStyle: theme.textTheme.bodySmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+            titleStyle: theme.textTheme.bodySmall
+                ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ],
         centerSpaceRadius: 40,
@@ -238,15 +255,17 @@ class _BreakdownRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(title, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-              )),
+              Text(title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      )),
             ],
           ),
-          Text(percentage, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          )),
+          Text(percentage,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  )),
         ],
       ),
     );
@@ -267,7 +286,8 @@ class _SubscriptionTrackerCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
@@ -299,7 +319,8 @@ class _SubscriptionTrackerCard extends ConsumerWidget {
                             builder: (context) =>
                                 const ManageSubscriptionsScreen())),
                     style: TextButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.primary, // Accent color
+                      foregroundColor:
+                          Theme.of(context).colorScheme.primary, // Accent color
                       textStyle: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                     child: const Text('Manage'),
@@ -327,10 +348,14 @@ class _SubscriptionTrackerCard extends ConsumerWidget {
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.5),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer
+                                  .withOpacity(0.5),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(Icons.receipt_long, color: Theme.of(context).colorScheme.primary),
+                            child: Icon(Icons.receipt_long,
+                                color: Theme.of(context).colorScheme.primary),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -339,15 +364,25 @@ class _SubscriptionTrackerCard extends ConsumerWidget {
                               children: [
                                 Text(
                                   sub.name,
-                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall
+                                      ?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
                                       ),
                                 ),
                                 Text(
                                   'Next due: ${AppFormatters.formatDate(sub.nextDueDate)}',
-                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
                                       ),
                                 ),
                               ],
@@ -355,9 +390,13 @@ class _SubscriptionTrackerCard extends ConsumerWidget {
                           ),
                           Text(
                             AppFormatters.formatCurrency(sub.amount, currency),
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
                           ),
                         ],
@@ -398,7 +437,8 @@ class _CashFlowProjectionCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
@@ -424,9 +464,12 @@ class _CashFlowProjectionCard extends ConsumerWidget {
                   child: Center(
                       child: Text(
                           'Not enough data to display cash flow chart (min 2 months).',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ))),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ))),
                 );
               }
               return CashFlowChart(cashFlowData: data);
@@ -451,11 +494,15 @@ class _CashFlowProjectionCard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _ChartLegendItem(color: Theme.of(context).colorScheme.primary, text: 'Income'),
+              _ChartLegendItem(
+                  color: Theme.of(context).colorScheme.primary, text: 'Income'),
               const SizedBox(width: 16),
-              _ChartLegendItem(color: Theme.of(context).colorScheme.error, text: 'Expenses'),
+              _ChartLegendItem(
+                  color: Theme.of(context).colorScheme.error, text: 'Expenses'),
               const SizedBox(width: 16),
-              _ChartLegendItem(color: Theme.of(context).colorScheme.secondary, text: 'Net Flow'),
+              _ChartLegendItem(
+                  color: Theme.of(context).colorScheme.secondary,
+                  text: 'Net Flow'),
             ],
           ),
         ],
@@ -483,9 +530,10 @@ class _ChartLegendItem extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 4),
-        Text(text, style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-        )),
+        Text(text,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                )),
       ],
     );
   }

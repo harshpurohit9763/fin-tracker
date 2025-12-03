@@ -126,15 +126,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ),
                           ),
                     background: hasEmi
-                        ? OverlappingCardView(
-                            children: emis.map((emi) {
-                              return FlippableEmiCard(
-                                emi: emi,
-                                currency: currency,
-                                userName: userName,
-                                onProfileTap: navigateToProfile,
-                              );
-                            }).toList(),
+                        ? Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: OverlappingCardView(
+                              children: emis.map((emi) {
+                                return FlippableEmiCard(
+                                  emi: emi,
+                                  currency: currency,
+                                  userName: userName,
+                                  onProfileTap: navigateToProfile,
+                                );
+                              }).toList(),
+                            ),
                           )
                         : null,
                   ),

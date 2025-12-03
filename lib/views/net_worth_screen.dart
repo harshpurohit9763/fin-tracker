@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/helper/app_formater.dart';
@@ -20,13 +21,21 @@ class NetWorthScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 32), // Top spacing
-            Text(
-              'Net Worth',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
+            Row(
+              children: [
+                CupertinoNavigationBarBackButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                Text(
+                  'Net Worth',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ],
             ),
+
             const SizedBox(height: 32),
             const _MainNetWorthCard(),
             const SizedBox(height: 24),
@@ -56,7 +65,8 @@ class _MainNetWorthCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
           boxShadow: [
             BoxShadow(
               color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
@@ -83,10 +93,7 @@ class _MainNetWorthCard extends ConsumerWidget {
               data: (change) => Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                      change >= 0
-                          ? Icons.trending_up
-                          : Icons.trending_down,
+                  Icon(change >= 0 ? Icons.trending_up : Icons.trending_down,
                       color: change >= 0
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.error,
@@ -113,7 +120,8 @@ class _MainNetWorthCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
           boxShadow: [
             BoxShadow(
               color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
@@ -130,7 +138,8 @@ class _MainNetWorthCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
           boxShadow: [
             BoxShadow(
               color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
@@ -187,7 +196,8 @@ class _AssetsCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
@@ -226,9 +236,12 @@ class _AssetsCard extends ConsumerWidget {
               children: assets.isEmpty
                   ? [
                       Text('No assets added.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ))
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ))
                     ]
                   : assets
                       .map((asset) => Padding(
@@ -238,22 +251,37 @@ class _AssetsCard extends ConsumerWidget {
                               children: [
                                 Row(
                                   children: [
-                                    Icon(_getIconData(asset.icon), // Use dynamic icon
-                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    Icon(
+                                        _getIconData(
+                                            asset.icon), // Use dynamic icon
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
                                         size: 20),
                                     const SizedBox(width: 8),
                                     Text(asset.name,
-                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                              color: Theme.of(context).colorScheme.onSurface,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
                                             )),
                                   ],
                                 ),
-                                Text(AppFormatters.formatCurrency(
-                                    asset.value, currency),
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: Theme.of(context).colorScheme.onSurface,
-                                            )),
+                                Text(
+                                    AppFormatters.formatCurrency(
+                                        asset.value, currency),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface,
+                                        )),
                               ],
                             ),
                           ))
@@ -270,19 +298,28 @@ class _AssetsCard extends ConsumerWidget {
           totalAssetsAsync.when(
             data: (total) => Column(
               children: [
-                Divider(height: 1, color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
+                Divider(
+                    height: 1,
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.2)),
                 Padding(
                   padding: const EdgeInsets.only(top: 12.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Total Assets',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.onSurface,
                               )),
                       Text(AppFormatters.formatCurrency(total, currency),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.onSurface,
                               )),
@@ -315,7 +352,8 @@ class _LiabilitiesCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
@@ -341,25 +379,40 @@ class _LiabilitiesCard extends ConsumerWidget {
                 children: activeEmis.isEmpty
                     ? [
                         Text('No active loans.',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                                 ))
                       ]
                     : activeEmis
                         .map((emi) => Padding(
                               padding: const EdgeInsets.only(bottom: 12.0),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(Icons.home_outlined, // Using home icon for loans
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      Icon(
+                                          Icons
+                                              .home_outlined, // Using home icon for loans
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
                                           size: 20),
                                       const SizedBox(width: 8),
                                       Text(emi.loanName,
-                                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                color: Theme.of(context).colorScheme.onSurface,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onSurface,
                                               )),
                                     ],
                                   ),
@@ -368,10 +421,15 @@ class _LiabilitiesCard extends ConsumerWidget {
                                           emi.monthlyEmiAmount *
                                               emi.tenureRemainingMonths,
                                           currency),
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(context).colorScheme.onSurface,
-                                              )),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface,
+                                          )),
                                 ],
                               ),
                             ))
@@ -389,19 +447,28 @@ class _LiabilitiesCard extends ConsumerWidget {
           totalLiabilitiesAsync.when(
             data: (total) => Column(
               children: [
-                Divider(height: 1, color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
+                Divider(
+                    height: 1,
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.2)),
                 Padding(
                   padding: const EdgeInsets.only(top: 12.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Total Liabilities',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.onSurface,
                               )),
                       Text(AppFormatters.formatCurrency(total, currency),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Theme.of(context).colorScheme.onSurface,
                               )),
@@ -418,4 +485,3 @@ class _LiabilitiesCard extends ConsumerWidget {
     );
   }
 }
-
