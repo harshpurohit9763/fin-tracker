@@ -12,7 +12,21 @@ final currentMonthSpendingProvider = FutureProvider<double>((ref) async {
   final now = DateTime.now();
   final startOfMonth = DateTime(now.year, now.month, 1);
   final endOfMonth = DateTime(now.year, now.month + 1, 0);
-  return ref.watch(_reportRepo).getTotalForDateRange(startOfMonth, endOfMonth);
+  // Exclude 'Investment' type transactions to get true spending
+  return await ref.watch(_reportRepo).getTotalForDateRangeFiltered(
+      startOfMonth, endOfMonth,
+      excludedTypes: ['Investment']);
+});
+
+// Provider for savings/investments made in the current month.
+final currentMonthSavingsProvider = FutureProvider<double>((ref) async {
+  final now = DateTime.now();
+  final startOfMonth = DateTime(now.year, now.month, 1);
+  final endOfMonth = DateTime(now.year, now.month + 1, 0);
+  // Only include 'Investment' type transactions
+  return await ref.watch(_reportRepo).getTotalForDateRangeFiltered(
+      startOfMonth, endOfMonth,
+      includedTypes: ['Investment']);
 });
 
 // Provider for Upcoming EMIs Due This Week (Count)

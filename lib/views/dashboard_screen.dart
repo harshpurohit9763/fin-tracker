@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:personal_finance/views/financial_goals_screen.dart';
 import 'package:personal_finance/views/advanced_reports_screen.dart';
 import 'package:personal_finance/views/budgets_screen.dart';
 import 'package:personal_finance/controllers/expense_provider.dart';
@@ -52,7 +53,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final currency = ref.watch(currencyProvider);
     final userName = ref.watch(userNameProvider);
     // Watch providers for the metric cards
-    final totalSpendingAsync = ref.watch(currentMonthSpendingProvider);
+    final monthSpendingAsync = ref.watch(currentMonthSpendingProvider);
+    final monthSavingsAsync = ref.watch(currentMonthSavingsProvider);
     final upcomingEmisAsync = ref.watch(upcomingEmisThisWeekCountProvider);
     final nextEmiAsync = ref.watch(next3UpcomingEmisProvider);
 
@@ -163,7 +165,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: totalSpendingAsync.when(
+                          child: monthSpendingAsync.when(
                             data: (total) => MetricCard(
                               title: "Month's Spending",
                               value: AppFormatters.formatCurrency(
@@ -200,37 +202,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         SizedBox(width: 16.w),
                         Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _showUpcomingEmis = !_showUpcomingEmis;
-                              });
-                            },
-                            child: upcomingEmisAsync.when(
-                              data: (count) => MetricCard(
-                                title: 'EMIs Due This Week',
-                                value: '$count Payments',
-                                icon: Icons.payment,
-                                color: Theme.of(context).colorScheme.secondary,
-                                onIconTap: () {
-                                  setState(() {
-                                    _showUpcomingEmis = !_showUpcomingEmis;
-                                  });
-                                },
+                          child: monthSavingsAsync.when(
+                            data: (total) => MetricCard(
+                              title: "Month's Savings",
+                              value: AppFormatters.formatCurrency(
+                                total,
+                                currency,
                               ),
-                              loading: () => MetricCard(
-                                  title: 'EMIs Due This Week',
-                                  value: '...',
-                                  icon: Icons.payment,
-                                  color: Colors.grey,
-                                  onIconTap: () {}),
-                              error: (e, s) => MetricCard(
-                                  title: 'EMIs Due This Week',
-                                  value: 'Error',
-                                  icon: Icons.error,
-                                  color: Colors.redAccent,
-                                  onIconTap: () {}),
+                              icon: Icons.savings_outlined,
+                              color: Colors.green,
+                              onIconTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const FinancialGoalsScreen()));
+                              },
                             ),
+                            loading: () => MetricCard(
+                                title: "Month's Savings",
+                                value: '...',
+                                icon: Icons.savings_outlined,
+                                color: Colors.grey,
+                                onIconTap: () {}),
+                            error: (e, s) => MetricCard(
+                                title: "Month's Savings",
+                                value: 'Error',
+                                icon: Icons.error,
+                                color: Colors.redAccent,
+                                onIconTap: () {}),
                           ),
                         ),
                       ],
@@ -313,6 +313,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 MaterialPageRoute(
                                     builder: (context) =>
                                         const AdvancedReportsScreen()))),
+                        _FeatureTile(
+                            title: 'Financial Goals',
+                            icon: Icons.flag_outlined,
+                            color: Colors.cyan,
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          const FinancialGoalsScreen()));
+                            }),
                       ],
                     ),
                   ],

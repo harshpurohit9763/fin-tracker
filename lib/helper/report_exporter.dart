@@ -1,21 +1,21 @@
-import 'package:flutter/material.dart';
-import 'package:personal_finance/helper/app_formater.dart';
+import 'dart:typed_data';
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart' show DateTimeRange;
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:personal_finance/controllers/insights_provider.dart';
 import 'package:personal_finance/models/asset_model.dart';
 import 'package:personal_finance/models/expense_model.dart';
 import 'package:personal_finance/models/income_model.dart';
-import 'package:personal_finance/controllers/insights_provider.dart';
+import 'package:personal_finance/helper/report_repo.dart';
 import 'package:personal_finance/models/subscription_model.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
-class ReportExporter {
-  // --- Color Palette ---
-  static const PdfColor deepBlue = PdfColor.fromInt(0xFF003366);
-  static const PdfColor mustardYellow = PdfColor.fromInt(0xFFFFDB58);
-  static const PdfColor lightGrey = PdfColor.fromInt(0xFFF0F0F0);
-  static const PdfColor darkGrey = PdfColor.fromInt(0xFF333333);
+import 'app_formater.dart';
 
+class ReportExporter {
   static Future<void> generateAndShareReport({
     required DateTimeRange dateRange,
     required String currency,
@@ -25,478 +25,528 @@ class ReportExporter {
     required List<Asset> assets,
     required List<Subscription> subscriptions,
     required Map<String, double> budgetData,
+    required List<CashFlowData> cashFlowData,
   }) async {
-    final doc = pw.Document();
+    final pdf = pw.Document();
 
-    // Use try-catch for font loading as it requires internet
-    pw.Font font;
-    pw.Font boldFont;
-    try {
-      font = await PdfGoogleFonts.openSansRegular();
-      boldFont = await PdfGoogleFonts.openSansBold();
-    } catch (e) {
-      font = pw.Font.helvetica();
-      boldFont = pw.Font.helveticaBold();
-    }
+    // --- THEME AND FONTS ---
+    final font = await PdfGoogleFonts.openSansRegular();
+    final boldFont = await PdfGoogleFonts.openSansBold();
+    final logo = pw.MemoryImage(
+      (await rootBundle.load('assets/icon/app_icon.png')).buffer.asUint8List(),
+    );
 
-    final pw.ThemeData theme = pw.ThemeData.withFont(
+    const accentColor = PdfColor.fromInt(0xFFFFEADD); // Light Peach
+    const accentColorDark = PdfColor.fromInt(0xFFF57C00); // Warm Orange
+    final grayColor = PdfColor.fromHex('#EEEEEE');
+    final textColor = PdfColor.fromHex('#1A202C');
+
+    final theme = pw.ThemeData.withFont(
       base: font,
       bold: boldFont,
+    ).copyWith(
+      defaultTextStyle: pw.TextStyle(color: textColor, fontSize: 10),
+      header0: pw.TextStyle(
+          fontSize: 24, fontWeight: pw.FontWeight.bold, color: textColor),
+      header1: pw.TextStyle(
+          fontSize: 20, fontWeight: pw.FontWeight.bold, color: textColor),
+      header2: pw.TextStyle(
+          fontSize: 16, fontWeight: pw.FontWeight.bold, color: textColor),
     );
 
-    // --- Reusable Widgets & Styles ---
-    pw.Widget sectionHeader(String title) {
-      return pw.Container(
-        decoration: const pw.BoxDecoration(
-          color: deepBlue,
-          borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
-        ),
-        padding: const pw.EdgeInsets.all(8),
-        child: pw.Text(
-          title,
-          style: pw.TextStyle(
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.white,
-            fontSize: 16,
-          ),
-        ),
-      );
-    }
-
-    pw.Widget placeholderText() {
-      return pw.Text(
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
-        'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. '
-        'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. '
-        'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.',
-        textAlign: pw.TextAlign.justify,
-      );
-    }
-
-    // --- Page Definitions ---
-
-    // 1. Cover Page
-    doc.addPage(
+    // --- PDF CONTENT ---
+    pdf.addPage(
       pw.MultiPage(
         theme: theme,
-        build: (pw.Context context) {
-          return [
-            pw.Center(
-              child: pw.Column(
-                mainAxisAlignment: pw.MainAxisAlignment.center,
-                crossAxisAlignment: pw.CrossAxisAlignment.center,
-                children: [
-                  pw.Text(
-                    'Financial Sheet',
-                    style: pw.TextStyle(
-                        fontSize: 40,
-                        fontWeight: pw.FontWeight.bold,
-                        color: deepBlue),
-                  ),
-                  pw.SizedBox(height: 10),
-                  pw.Text(
-                    'Period: ${AppFormatters.formatDate(dateRange.start)} - ${AppFormatters.formatDate(dateRange.end)}',
-                    style: const pw.TextStyle(fontSize: 16, color: darkGrey),
-                  ),
-                ],
-              ),
-            )
-          ];
-        },
+        pageFormat: PdfPageFormat.a4,
+        header: (context) => _buildHeader(context, logo),
+        footer: _buildFooter,
+        build: (context) => [
+          _buildTitle(context, dateRange),
+          pw.SizedBox(height: 20),
+          _buildSummary(context, currency, spendingBreakdown),
+          pw.SizedBox(height: 20),
+          _buildCashFlowChart(context, currency, cashFlowData),
+          pw.SizedBox(height: 20),
+          _buildSpendingBreakdown(context, currency, expenses, accentColor),
+          pw.SizedBox(height: 20),
+          _buildNetWorth(context, currency, assets),
+          pw.SizedBox(height: 20),
+          _buildRecurringCosts(context, currency, subscriptions),
+          pw.SizedBox(height: 20),
+          _buildTransactionList(
+              context, currency, expenses, incomes, accentColor),
+        ],
       ),
     );
 
-    // 2. Highlights & Review of Operations
-    doc.addPage(
-      pw.MultiPage(
-        maxPages: 100,
-        theme: theme,
-        header: (context) => pw.Header(
-            level: 0,
-            child: pw.Text('Report Highlights',
-                style: pw.TextStyle(
-                    fontSize: 20, fontWeight: pw.FontWeight.bold))),
-        build: (pw.Context context) {
-          final totalExpenses =
-              spendingBreakdown.needs + spendingBreakdown.wants;
-          final totalIncome =
-              incomes.fold<double>(0, (sum, income) => sum + income.amount);
-          final netFlow =
-              totalIncome + spendingBreakdown.investments - totalExpenses;
-
-          return [
-            sectionHeader('Review of Operations'),
-            pw.SizedBox(height: 16),
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text('Total Income:'),
-                pw.Text(AppFormatters.formatCurrency(totalIncome, currency),
-                    style: pw.TextStyle(
-                        fontWeight: pw.FontWeight.bold, color: PdfColors.blue)),
-              ],
-            ),
-            pw.SizedBox(height: 8),
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text('Total Expenses (Needs + Wants):'),
-                pw.Text(AppFormatters.formatCurrency(totalExpenses, currency),
-                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-              ],
-            ),
-            pw.SizedBox(height: 8),
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text('Total Savings (Investments):'),
-                pw.Text(
-                    AppFormatters.formatCurrency(
-                        spendingBreakdown.investments, currency),
-                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-              ],
-            ),
-            pw.Divider(height: 20),
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text('Net Cash Flow:',
-                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                pw.Text(AppFormatters.formatCurrency(netFlow, currency),
-                    style: pw.TextStyle(
-                        fontWeight: pw.FontWeight.bold,
-                        color: netFlow >= 0 ? PdfColors.green : PdfColors.red)),
-              ],
-            ),
-            pw.SizedBox(height: 24),
-
-            // Budget Summary
-            sectionHeader('Budget Performance'),
-            pw.SizedBox(height: 16),
-            _buildBudgetSummary(budgetData, currency),
-            pw.SizedBox(height: 24),
-
-            // Asset Summary
-            sectionHeader('Asset Summary'),
-            pw.SizedBox(height: 16),
-            _buildAssetTable(assets, currency),
-            pw.SizedBox(height: 24),
-
-            // Recurring Costs
-            sectionHeader('Recurring Costs (Monthly)'),
-            pw.SizedBox(height: 16),
-            _buildSubscriptionTable(subscriptions, currency),
-          ];
-        },
-      ),
-    );
-
-    // 3. Director's Report & Social Matters (Placeholders)
-    doc.addPage(
-      pw.MultiPage(
-        maxPages: 100,
-        theme: theme,
-        header: (context) => pw.Header(
-            level: 0,
-            child: pw.Text("Management's Discussion",
-                style: pw.TextStyle(
-                    fontSize: 20, fontWeight: pw.FontWeight.bold))),
-        build: (pw.Context context) {
-          final categoryTotals = _aggregateExpensesByCategory(expenses);
-          return [
-            sectionHeader("Director's Report"),
-            pw.SizedBox(height: 16),
-            _buildCategorySpendingChart(categoryTotals, currency, theme),
-            pw.SizedBox(height: 24),
-            sectionHeader('Social & Environmental Matters'),
-            pw.SizedBox(height: 16),
-            placeholderText(),
-            pw.SizedBox(height: 24),
-            sectionHeader("Statement of Directors' Responsibilities"),
-            pw.SizedBox(height: 16),
-            placeholderText(),
-          ];
-        },
-      ),
-    );
-
-    // 4. Transaction List
-    doc.addPage(
-      pw.MultiPage(
-        maxPages: 100,
-        theme: theme,
-        header: (context) => pw.Header(
-            level: 0,
-            child: pw.Text('Detailed Transactions',
-                style: pw.TextStyle(
-                    fontSize: 20, fontWeight: pw.FontWeight.bold))),
-        build: (pw.Context context) {
-          return [_buildTransactionTable(expenses, incomes, currency)];
-        },
-      ),
-    );
-
-    // --- Share the document ---
     await Printing.sharePdf(
-        bytes: await doc.save(), filename: 'financial-report.pdf');
+        bytes: await pdf.save(), filename: 'financial_report.pdf');
   }
 
-  // --- Helper methods for building tables ---
+  static pw.Widget _buildHeader(pw.Context context, pw.ImageProvider logo) {
+    return pw.Container(
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey200)),
+      ),
+      padding: const pw.EdgeInsets.only(bottom: 8),
+      margin: const pw.EdgeInsets.only(bottom: 16),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Row(children: [
+            pw.Image(logo, height: 30),
+            pw.SizedBox(width: 10),
+            pw.Text('Financial Report',
+                style:
+                    pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14)),
+          ]),
+          pw.Text(AppFormatters.formatDate(DateTime.now())),
+        ],
+      ),
+    );
+  }
 
-  static pw.Widget _buildBudgetSummary(
-      Map<String, double> budgetData, String currency) {
-    final spent = budgetData['spent'] ?? 0.0;
-    final total = budgetData['total'] ?? 0.0;
+  static pw.Widget _buildFooter(pw.Context context) {
+    return pw.Container(
+      alignment: pw.Alignment.centerRight,
+      child: pw.Text(
+        'Page ${context.pageNumber} of ${context.pagesCount}',
+        style: const pw.TextStyle(color: PdfColors.grey, fontSize: 8),
+      ),
+    );
+  }
 
-    if (total == 0) {
-      return pw.Text('No budgets set for this period.');
-    }
-
-    final percentage = total > 0 ? (spent / total).clamp(0.0, 1.0) : 0.0;
-
+  static pw.Widget _buildTitle(pw.Context context, DateTimeRange dateRange) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
+        pw.Text('Financial Summary', style: pw.Theme.of(context).header0),
+        pw.SizedBox(height: 4),
         pw.Text(
-            'Spent ${AppFormatters.formatCurrency(spent, currency)} of ${AppFormatters.formatCurrency(total, currency)}'),
-        pw.SizedBox(height: 8),
-        pw.ClipRRect(
-          horizontalRadius: 5,
-          verticalRadius: 5,
-          child: pw.LinearProgressIndicator(
-            value: percentage,
-            backgroundColor: lightGrey,
-            valueColor: mustardYellow,
-          ),
+          'For the period: ${AppFormatters.formatDate(dateRange.start)} - ${AppFormatters.formatDate(dateRange.end)}',
+          style: pw.TextStyle(color: PdfColors.grey600, fontSize: 12),
         ),
       ],
     );
   }
 
-  static pw.Widget _buildAssetTable(List<Asset> assets, String currency) {
-    if (assets.isEmpty) return pw.Text('No assets recorded.');
+  static pw.Widget _buildSummary(pw.Context context, String currency,
+      SpendingBreakdown spendingBreakdown) {
+    final totalExpenses = spendingBreakdown.needs + spendingBreakdown.wants;
+    final netFlow = spendingBreakdown.income -
+        totalExpenses -
+        spendingBreakdown.investments;
 
-    final headers = ['Asset Name', 'Value'];
-    final data = assets
-        .map((asset) =>
-            [asset.name, AppFormatters.formatCurrency(asset.value, currency)])
-        .toList();
-
-    final total = assets.fold<double>(0.0, (sum, asset) => sum + asset.value);
-
-    return pw.TableHelper.fromTextArray(
-      headers: headers,
-      data: data,
-      border: pw.TableBorder.all(color: lightGrey),
-      headerStyle:
-          pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
-      headerDecoration: const pw.BoxDecoration(color: deepBlue),
-      cellStyle: const pw.TextStyle(),
-      cellAlignments: {
-        0: pw.Alignment.centerLeft,
-        1: pw.Alignment.centerRight,
-      },
-      // footerBuilder: (context) {
-      //   return pw.Text(
-      //     'Total Assets: ${AppFormatters.formatCurrency(total, currency)}',
-      //     style: pw.TextStyle(
-      //       fontWeight: pw.FontWeight.bold,
-      //     ),
-      //   );
-      // },
+    return pw.Column(
+      children: [
+        pw.Row(
+          children: [
+            _buildMetricCard(
+                context,
+                'Total Income',
+                AppFormatters.formatCurrency(
+                    spendingBreakdown.income, currency),
+                color: PdfColors.green),
+            pw.SizedBox(width: 10),
+            _buildMetricCard(context, 'Total Spending',
+                AppFormatters.formatCurrency(totalExpenses, currency),
+                color: PdfColors.red),
+          ],
+        ),
+        pw.SizedBox(height: 10),
+        pw.Row(
+          children: [
+            _buildMetricCard(
+                context,
+                'Total Savings',
+                AppFormatters.formatCurrency(
+                    spendingBreakdown.investments, currency),
+                color: PdfColors.blue),
+            pw.SizedBox(width: 10),
+            _buildMetricCard(context, 'Net Flow',
+                AppFormatters.formatCurrency(netFlow, currency),
+                color: netFlow >= 0 ? PdfColors.teal : PdfColors.orange),
+          ],
+        ),
+      ],
     );
   }
 
-  static pw.Widget _buildSubscriptionTable(
-      List<Subscription> subs, String currency) {
-    if (subs.isEmpty) return pw.Text('No recurring costs recorded.');
-
-    final headers = ['Service', 'Monthly Cost'];
-    final data = subs
-        .map((sub) =>
-            [sub.name, AppFormatters.formatCurrency(sub.amount, currency)])
-        .toList();
-
-    final total = subs.fold<double>(0.0, (sum, sub) => sum + sub.amount);
-
-    return pw.TableHelper.fromTextArray(
-      headers: headers,
-      data: data,
-      border: pw.TableBorder.all(color: lightGrey),
-      headerStyle:
-          pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
-      headerDecoration: const pw.BoxDecoration(color: deepBlue),
-      cellStyle: const pw.TextStyle(),
-      cellAlignments: {
-        0: pw.Alignment.centerLeft,
-        1: pw.Alignment.centerRight,
-      },
-      // footerBuilder: (context) {
-      //   return pw.Text(
-      //     'Total Monthly Cost: ${AppFormatters.formatCurrency(total, currency)}',
-      //     style: pw.TextStyle(
-      //       fontWeight: pw.FontWeight.bold,
-      //     ),
-      //   );
-      // },
+  static pw.Widget _buildMetricCard(
+      pw.Context context, String title, String value,
+      {required PdfColor color}) {
+    return pw.Expanded(
+      child: pw.Container(
+        padding: const pw.EdgeInsets.all(12),
+        decoration: pw.BoxDecoration(
+          color: color.shade(0.1),
+          borderRadius: pw.BorderRadius.circular(8),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(title,
+                style: pw.TextStyle(
+                    color: color.shade(0.9), fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 6),
+            pw.Text(value,
+                style: pw.TextStyle(
+                    color: color.shade(0.9),
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 18)),
+          ],
+        ),
+      ),
     );
   }
 
-  static pw.Widget _buildTransactionTable(
-      List<Expense> expenses, List<Income> incomes, String currency) {
-    if (expenses.isEmpty && incomes.isEmpty) {
-      return pw.Text('No transactions in this period.');
-    }
-
-    // Combine expenses and incomes
-    final allTransactions = <dynamic>[...expenses, ...incomes];
-    allTransactions.sort((a, b) => b.date.compareTo(a.date));
-
-    final headers = ['Date', 'Description', 'Category', 'Amount'];
-
-    return pw.Table.fromTextArray(
-      headers: headers,
-      headerStyle:
-          pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
-      headerDecoration: const pw.BoxDecoration(color: deepBlue),
-      cellStyle: const pw.TextStyle(fontSize: 10),
-      cellPadding: const pw.EdgeInsets.all(6),
-      border: pw.TableBorder.all(color: lightGrey),
-      cellAlignments: {
-        0: pw.Alignment.centerLeft,
-        1: pw.Alignment.centerLeft,
-        2: pw.Alignment.centerLeft,
-        3: pw.Alignment.centerRight,
-      },
-      data: allTransactions.map((tx) {
-        if (tx is Expense &&
-            tx.transactionType == 'EMI' &&
-            tx.scheduledAmount != null) {
-          final difference = tx.amount - tx.scheduledAmount!;
-          return [
-            AppFormatters.formatDate(tx.date),
-            tx.description ?? 'EMI Payment',
-            tx.category,
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.end,
-              children: [
-                pw.Text(
-                  'Paid: ${AppFormatters.formatCurrency(tx.amount, currency)}',
-                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                ),
-                pw.Text(
-                  'Scheduled: ${AppFormatters.formatCurrency(tx.scheduledAmount!, currency)}',
-                  style: const pw.TextStyle(fontSize: 8),
-                ),
-                pw.Divider(height: 2),
-                pw.Text(
-                  'Difference: ${AppFormatters.formatCurrency(difference, currency)}',
-                  style: pw.TextStyle(
-                    fontSize: 8,
-                    color: difference == 0
-                        ? PdfColors.grey
-                        : difference > 0
-                            ? PdfColors.red
-                            : PdfColors.green,
-                  ),
-                ),
-              ],
-            ),
-          ];
-        } else if (tx is Expense) {
-          return [
-            AppFormatters.formatDate(tx.date),
-            tx.description ?? '',
-            tx.category,
-            pw.Text(
-              '-${AppFormatters.formatCurrency(tx.amount, currency)}',
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-            ),
-          ];
-        } else if (tx is Income) {
-          return [
-            AppFormatters.formatDate(tx.date),
-            tx.description,
-            tx.source,
-            pw.Text(
-              '+${AppFormatters.formatCurrency(tx.amount, currency)}',
-              style: pw.TextStyle(
-                color: PdfColors.blue,
-                fontWeight: pw.FontWeight.bold,
-              ),
-            ),
-          ];
-        }
-        return ['', '', '', ''];
-      }).toList(),
-    );
-  }
-
-  static Map<String, double> _aggregateExpensesByCategory(
-      List<Expense> expenses) {
+  static pw.Widget _buildSpendingBreakdown(pw.Context context, String currency,
+      List<Expense> expenses, PdfColor headerColor) {
     final Map<String, double> categoryTotals = {};
     for (var expense in expenses) {
-      categoryTotals.update(
-        expense.category,
-        (value) => value + expense.amount,
-        ifAbsent: () => expense.amount,
-      );
-    }
-    return categoryTotals;
-  }
-
-  static pw.Widget _buildCategorySpendingChart(
-      Map<String, double> categoryTotals, String currency, pw.ThemeData theme) {
-    if (categoryTotals.isEmpty) {
-      return pw.Text('No category spending data for this period.');
+      categoryTotals.update(expense.category, (value) => value + expense.amount,
+          ifAbsent: () => expense.amount);
     }
 
     final sortedCategories = categoryTotals.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value)); // Sort descending
-
-    final maxSpending =
-        sortedCategories.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text('Spending by Category',
-            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14)),
+        pw.Text('Spending Breakdown', style: pw.Theme.of(context).header2),
         pw.SizedBox(height: 10),
-        ...sortedCategories.map(
-          (entry) {
-            final category = entry.key;
-            final amount = entry.value;
-            final barWidth = (amount / maxSpending) * 200; // Max bar width 200
+        pw.Text(
+            'This table shows how your spending was distributed across different categories during the selected period.',
+            style: const pw.TextStyle(color: PdfColors.grey700)),
+        pw.SizedBox(height: 10),
+        _buildDataTable(
+          context,
+          headers: ['Category', 'Amount', 'Percentage'],
+          data: sortedCategories.map((entry) {
+            final totalSpending =
+                expenses.fold(0.0, (sum, e) => sum + e.amount);
+            final percentage =
+                totalSpending > 0 ? (entry.value / totalSpending) * 100 : 0.0;
+            return [
+              entry.key,
+              AppFormatters.formatCurrency(entry.value, currency),
+              '${percentage.toStringAsFixed(1)}%',
+            ];
+          }).toList(),
+          headerColor: headerColor,
+          columnWidths: {
+            0: const pw.FlexColumnWidth(2),
+            1: const pw.FlexColumnWidth(1),
+            2: const pw.FlexColumnWidth(1),
+          },
+          cellAlignments: {
+            1: pw.Alignment.centerRight,
+            2: pw.Alignment.centerRight,
+          },
+        ),
+      ],
+    );
+  }
 
-            return pw.Padding(
+  static pw.Widget _buildNetWorth(
+      pw.Context context, String currency, List<Asset> assets) {
+    final totalAssets = assets.fold(0.0, (sum, asset) => sum + asset.value);
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Asset Summary', style: pw.Theme.of(context).header2),
+        pw.SizedBox(height: 10),
+        pw.Text(
+            'A summary of your recorded assets. Note: This does not include liabilities for a full net worth calculation.',
+            style: const pw.TextStyle(color: PdfColors.grey700)),
+        pw.SizedBox(height: 10),
+        ...assets.map((asset) => pw.Container(
               padding: const pw.EdgeInsets.symmetric(vertical: 4),
               child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.SizedBox(
-                    width: 100,
-                    child: pw.Text(category, style: theme.defaultTextStyle),
-                  ),
-                  pw.SizedBox(width: 10),
-                  pw.Container(
-                    height: 10,
-                    width: barWidth,
-                    decoration: const pw.BoxDecoration(
-                      color: mustardYellow,
-                      borderRadius: pw.BorderRadius.all(pw.Radius.circular(2)),
-                    ),
-                  ),
-                  pw.SizedBox(width: 10),
-                  pw.Text(AppFormatters.formatCurrency(amount, currency),
-                      style: theme.defaultTextStyle),
+                  pw.Text(asset.name),
+                  pw.Text(AppFormatters.formatCurrency(asset.value, currency),
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
                 ],
+              ),
+            )),
+        pw.Divider(height: 20),
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text('Total Asset Value',
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+            pw.Text(AppFormatters.formatCurrency(totalAssets, currency),
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _buildRecurringCosts(
+      pw.Context context, String currency, List<Subscription> subscriptions) {
+    final totalMonthlyCost =
+        subscriptions.fold(0.0, (sum, sub) => sum + sub.amount);
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Recurring Costs (Subscriptions)',
+            style: pw.Theme.of(context).header2),
+        pw.SizedBox(height: 10),
+        ...subscriptions.map((sub) => pw.Container(
+              padding: const pw.EdgeInsets.symmetric(vertical: 4),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(sub.name),
+                  pw.Text(AppFormatters.formatCurrency(sub.amount, currency),
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+            )),
+        pw.Divider(height: 20),
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text('Total Monthly Recurring Costs',
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+            pw.Text(AppFormatters.formatCurrency(totalMonthlyCost, currency),
+                style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _buildTransactionList(pw.Context context, String currency,
+      List<Expense> expenses, List<Income> incomes, PdfColor headerColor) {
+    final allTransactions = <Map<String, dynamic>>[];
+    for (var e in expenses) {
+      allTransactions.add({
+        'date': e.date,
+        'description': e.description,
+        'category': e.category,
+        'amount': -e.amount,
+      });
+    }
+    for (var i in incomes) {
+      allTransactions.add({
+        'date': i.date,
+        'description': i.description,
+        'category': i.source,
+        'amount': i.amount,
+      });
+    }
+
+    allTransactions
+        .sort((a, b) => (b['date'] as DateTime).compareTo(a['date']));
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Transaction Log', style: pw.Theme.of(context).header2),
+        pw.SizedBox(height: 10),
+        _buildDataTable(
+          context,
+          headers: ['Date', 'Description', 'Category', 'Amount'],
+          data: allTransactions.map((t) {
+            final amount = t['amount'] as double;
+            return [
+              AppFormatters.formatDate(t['date']),
+              t['description'],
+              t['category'],
+              pw.Text(
+                AppFormatters.formatCurrency(amount, currency),
+                style: pw.TextStyle(
+                    color: amount >= 0 ? PdfColors.green : PdfColors.red),
+              ),
+            ];
+          }).toList(),
+          headerColor: headerColor,
+          columnWidths: {
+            0: const pw.FlexColumnWidth(1.5),
+            1: const pw.FlexColumnWidth(3),
+            2: const pw.FlexColumnWidth(2),
+            3: const pw.FlexColumnWidth(1.5),
+          },
+          cellAlignments: {
+            3: pw.Alignment.centerRight,
+          },
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _buildDataTable(
+    pw.Context context, {
+    required List<String> headers,
+    required List<List<dynamic>> data,
+    required PdfColor headerColor,
+    Map<int, pw.TableColumnWidth>? columnWidths,
+    Map<int, pw.Alignment> cellAlignments = const {},
+  }) {
+    final tableHeaders = headers.asMap().entries.map((entry) {
+      final alignment = cellAlignments[entry.key] ?? pw.Alignment.centerLeft;
+      return pw.Container(
+        alignment: alignment,
+        padding: const pw.EdgeInsets.all(5),
+        child: pw.Text(entry.value,
+            style: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.black,
+                fontSize: 10)),
+      );
+    }).toList();
+
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey200, width: 1),
+      columnWidths: columnWidths,
+      children: [
+        pw.TableRow(
+          decoration: pw.BoxDecoration(color: headerColor),
+          children: tableHeaders,
+        ),
+        ...List<pw.TableRow>.generate(
+          data.length,
+          (rowIndex) {
+            final row = data[rowIndex];
+            return pw.TableRow(
+              decoration: pw.BoxDecoration(
+                color: rowIndex % 2 != 0
+                    ? PdfColor.fromHex('#FAFAFA')
+                    : PdfColors.white,
+              ),
+              children: List<pw.Widget>.generate(
+                row.length,
+                (colIndex) {
+                  final cellData = row[colIndex];
+                  final alignment =
+                      cellAlignments[colIndex] ?? pw.Alignment.centerLeft;
+
+                  final child = cellData is pw.Widget
+                      ? cellData
+                      : pw.Text(cellData.toString(),
+                          style: const pw.TextStyle(fontSize: 9));
+
+                  return pw.Container(
+                    alignment: alignment,
+                    padding: const pw.EdgeInsets.all(5),
+                    child: child,
+                  );
+                },
               ),
             );
           },
-        ).toList(),
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _buildCashFlowChart(
+    pw.Context context,
+    String currency,
+    List<CashFlowData> cashFlowData,
+  ) {
+    // If there is no data, we cannot draw a chart.
+    if (cashFlowData.isEmpty) {
+      return pw.Container();
+    }
+
+    // Find the absolute maximum value across all data points.
+    final maxValue = cashFlowData
+        .map((d) => math.max(d.income, d.expenses))
+        .reduce(math.max);
+
+    // If the maximum value is zero, the chart has no data to plot.
+    // Skip rendering to prevent division-by-zero errors in the PDF library.
+    if (maxValue <= 0) {
+      return pw.Container();
+    }
+    var yAxisMax = maxValue * 1.2;
+    const incomeColor = PdfColors.green;
+    const expenseColor = PdfColors.red;
+
+    final chart = pw.Chart(
+      left: pw.Container(
+        alignment: pw.Alignment.centerRight,
+        margin: const pw.EdgeInsets.only(right: 5),
+        child: pw.Transform.rotate(
+          angle: math.pi / 2,
+          child: pw.Text('Amount ($currency)',
+              style: const pw.TextStyle(fontSize: 8)),
+        ),
+      ),
+      bottom: pw.Container(
+        margin: const pw.EdgeInsets.only(top: 5),
+        child: pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
+          children: [
+            pw.Row(children: [
+              pw.Container(width: 10, height: 10, color: incomeColor),
+              pw.SizedBox(width: 5),
+              pw.Text('Income', style: const pw.TextStyle(fontSize: 8)),
+            ]),
+            pw.Row(children: [
+              pw.Container(width: 10, height: 10, color: expenseColor),
+              pw.SizedBox(width: 5),
+              pw.Text('Expenses', style: const pw.TextStyle(fontSize: 8)),
+            ]),
+          ],
+        ),
+      ),
+      grid: pw.CartesianGrid(
+        xAxis: pw.FixedAxis.fromStrings(
+          cashFlowData
+              .map<String>(
+                  (d) => AppFormatters.getMonthName(d.month, short: true))
+              .toList(),
+          ticks: true,
+        ),
+        yAxis: pw.FixedAxis(
+          [0, yAxisMax / 2, yAxisMax],
+          format: (v) => AppFormatters.formatCurrency(
+              v.toDouble(), ''), // No currency symbol on axis
+          divisions: true,
+        ),
+      ),
+      datasets: [
+        pw.BarDataSet<pw.PointChartValue>(
+          color: incomeColor,
+          width: 15,
+          data: List.generate(
+            cashFlowData.length,
+            (i) => pw.PointChartValue(i.toDouble(), cashFlowData[i].income),
+          ),
+        ),
+        pw.BarDataSet<pw.PointChartValue>(
+          color: expenseColor,
+          width: 15,
+          data: List.generate(
+            cashFlowData.length,
+            (i) => pw.PointChartValue(i.toDouble(), cashFlowData[i].expenses),
+          ),
+        ),
+      ],
+    );
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('Monthly Cash Flow', style: pw.Theme.of(context).header2),
+        pw.SizedBox(height: 10),
+        pw.Text(
+            'This chart visualizes your total income versus total expenses for each month in the selected period.',
+            style: const pw.TextStyle(color: PdfColors.grey700)),
+        pw.SizedBox(height: 20),
+        pw.SizedBox(
+          height: 200,
+          child: chart,
+        ),
       ],
     );
   }
 }
-
-

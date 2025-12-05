@@ -71,10 +71,40 @@ class AppFormatters {
   }
 
   // Get month name from month number (1-12)
-  static String getMonthName(int monthNumber) {
+  static String getMonthName(int monthNumber, {bool short = false}) {
+    const List<String> monthNames = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+    const List<String> shortMonthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     if (monthNumber < 1 || monthNumber > 12) {
-      throw ArgumentError('Month number must be between 1 and 12');
+      return 'Invalid Month';
     }
-    return DateFormat.MMMM().format(DateTime(2000, monthNumber));
+    return short
+        ? shortMonthNames[monthNumber - 1]
+        : monthNames[monthNumber - 1];
   }
 }

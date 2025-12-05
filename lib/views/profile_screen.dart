@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:personal_finance/controllers/asset_provider.dart';
 import 'package:personal_finance/controllers/budget_provider.dart';
@@ -5,16 +8,19 @@ import 'package:personal_finance/controllers/category_provider.dart';
 import 'package:personal_finance/controllers/dashboard_provider.dart';
 import 'package:personal_finance/controllers/emi_provider.dart';
 import 'package:personal_finance/controllers/expense_provider.dart';
+import 'package:personal_finance/controllers/goal_provider.dart';
 import 'package:personal_finance/controllers/income_provider.dart';
 import 'package:personal_finance/helper/notification_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:personal_finance/views/badge_provider.dart';
 import 'package:personal_finance/views/manage_categories_screen.dart';
 import 'package:personal_finance/controllers/shared_preferences_provider.dart';
 import 'package:personal_finance/helper/data_backup_service.dart'; // Added import
 import 'package:personal_finance/db/db_helper.dart';
 import 'package:personal_finance/controllers/subscription_provider.dart'; // Added import
 import 'package:personal_finance/helper/dummy_data_service.dart';
+import 'package:encrypt/encrypt.dart' as encrypt;
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -26,6 +32,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late TextEditingController _nameController;
   bool _isNameChanged = false;
+  bool _isEncryptedBackupEnabled = false;
 
   @override
   void initState() {
@@ -40,6 +47,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         });
       }
     });
+    _isEncryptedBackupEnabled =
+        ref.read(sharedPreferencesProvider).getBool('encryptedBackup') ?? false;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // _showTutorial(); // Removed tutorial call
     });
@@ -484,6 +493,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ),
                             const SizedBox(height: 12),
                             const Divider(),
+                            SwitchListTile(
+                              title: const Text('Enable Encrypted Backups'),
+                              value: _isEncryptedBackupEnabled,
+                              onChanged: (value) {
+                                if (value) {
+                                  _showSetPasswordDialog();
+                                } else {
+                                  final prefs =
+                                      ref.read(sharedPreferencesProvider);
+                                  prefs.remove('encryptedMasterKey');
+                                  prefs.setBool('encryptedBackup', false);
+                                  setState(() {
+                                    _isEncryptedBackupEnabled = false;
+                                  });
+                                }
+                              },
+                            ),
+                            if (_isEncryptedBackupEnabled)
+                              ListTile(
+                                leading: Icon(Icons.password,
+                                    size: 20, color: Colors.grey.shade700),
+                                title: const Text('Update Password'),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () => _showUpdatePasswordDialog(),
+                              ),
                             ListTile(
                               leading: Icon(Icons.layers_outlined,
                                   size: 20, color: Colors.grey.shade700),
@@ -603,8 +637,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       await database.delete(DatabaseHelper.emisTable);
       await database.delete(DatabaseHelper.subscriptionsTable);
       await database.delete(DatabaseHelper.assetsTable);
+      await database.delete(DatabaseHelper.goalsTable);
+      await database.delete(DatabaseHelper.badgesTable);
       final prefs = ref.read(sharedPreferencesProvider);
+
+      // Save settings to persist
+      final encryptedBackup = prefs.getBool('encryptedBackup');
+      final encryptedMasterKey = prefs.getString('encryptedMasterKey');
+      final autoBackupFrequency = prefs.getString('autoBackupFrequency');
+
       await prefs.clear(); // Clear all shared preferences
+
+      // Restore settings
+      if (encryptedBackup != null) {
+        await prefs.setBool('encryptedBackup', encryptedBackup);
+      }
+      if (encryptedMasterKey != null) {
+        await prefs.setString('encryptedMasterKey', encryptedMasterKey);
+      }
+      if (autoBackupFrequency != null) {
+        await prefs.setString('autoBackupFrequency', autoBackupFrequency);
+      }
 
       // Optionally, reset providers to their initial state
       ref.invalidate(currentMonthSpendingProvider);
@@ -618,6 +671,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ref.invalidate(emiListProvider);
       ref.invalidate(subscriptionListProvider);
       ref.invalidate(assetListProvider);
+      ref.invalidate(goalListProvider);
+      ref.invalidate(badgeListProvider);
       ref.invalidate(userNameProvider);
       ref.invalidate(currencyProvider);
       ref.invalidate(themeProvider);
@@ -627,5 +682,229 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SnackBar(content: Text('All data deleted!')),
       );
     }
+  }
+
+  void _showSetPasswordDialog() {
+    final passwordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Set Backup Password'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Password',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password cannot be empty';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: confirmPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm Password',
+                  ),
+                  validator: (value) {
+                    if (value != passwordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _isEncryptedBackupEnabled = false;
+                });
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  final prefs = ref.read(sharedPreferencesProvider);
+                  final password = passwordController.text;
+
+                  // Generate master key
+                  final random = Random.secure();
+                  final masterKeyBytes =
+                      List<int>.generate(32, (_) => random.nextInt(256));
+                  final masterKey = base64Url.encode(masterKeyBytes);
+
+                  // Encrypt master key with user's password
+                  final key = encrypt.Key.fromUtf8(
+                      password.padRight(32).substring(0, 32));
+                  final encrypter = encrypt.Encrypter(encrypt.AES(key));
+                  final iv = encrypt.IV.fromLength(16);
+                  final encryptedMasterKey =
+                      encrypter.encrypt(masterKey, iv: iv);
+
+                  prefs.setString('encryptedMasterKey',
+                      'ENCRYPTED_V1:${iv.base64}${encryptedMasterKey.base64}');
+                  prefs.setBool('encryptedBackup', true);
+                  prefs.remove('backupPassword');
+
+                  setState(() {
+                    _isEncryptedBackupEnabled = true;
+                  });
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Encrypted backups enabled.')),
+                  );
+                }
+              },
+              child: const Text('Set'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showUpdatePasswordDialog() {
+    final oldPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Update Backup Password'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: oldPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Old Password',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password cannot be empty';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: newPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'New Password',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Password cannot be empty';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: confirmPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm New Password',
+                  ),
+                  validator: (value) {
+                    if (value != newPasswordController.text) {
+                      return 'Passwords do not match';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  final prefs = ref.read(sharedPreferencesProvider);
+                  final oldPassword = oldPasswordController.text;
+                  final newPassword = newPasswordController.text;
+                  final encryptedMasterKeyString =
+                      prefs.getString('encryptedMasterKey');
+
+                  if (encryptedMasterKeyString != null) {
+                    try {
+                      final oldKey = encrypt.Key.fromUtf8(
+                          oldPassword.padRight(32).substring(0, 32));
+                      final oldEncrypter =
+                          encrypt.Encrypter(encrypt.AES(oldKey));
+                      final encryptedMasterKey = encryptedMasterKeyString
+                          .substring('ENCRYPTED_V1:'.length);
+                      final iv = encrypt.IV
+                          .fromBase64(encryptedMasterKey.substring(0, 24));
+                      final encrypted = encrypt.Encrypted.fromBase64(
+                          encryptedMasterKey.substring(24));
+                      final masterKey = oldEncrypter.decrypt(encrypted, iv: iv);
+
+                      // Re-encrypt with new password
+                      final newKey = encrypt.Key.fromUtf8(
+                          newPassword.padRight(32).substring(0, 32));
+                      final newEncrypter =
+                          encrypt.Encrypter(encrypt.AES(newKey));
+                      final newIv = encrypt.IV.fromLength(16);
+                      final newEncryptedMasterKey =
+                          newEncrypter.encrypt(masterKey, iv: newIv);
+
+                      prefs.setString('encryptedMasterKey',
+                          'ENCRYPTED_V1:${newIv.base64}${newEncryptedMasterKey.base64}');
+
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Password updated.')),
+                      );
+                    } catch (e) {
+                      print('Error updating password: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Incorrect old password.')),
+                      );
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content:
+                              Text('Encrypted backup not set up correctly.')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }

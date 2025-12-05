@@ -24,6 +24,8 @@ class DataBackupService {
     DatabaseHelper.assetsTable,
     DatabaseHelper.subscriptionsTable,
     DatabaseHelper.incomeTable,
+    DatabaseHelper.goalsTable,
+    DatabaseHelper.badgesTable,
   ];
 
   Future<void> exportData([BuildContext? context]) async {

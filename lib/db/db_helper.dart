@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 class DatabaseHelper {
   // Table and column names
   static const String dbName = 'expense_tracker.db';
-  static const int dbVersion = 3;
+  static const int dbVersion = 5;
 
   // Expenses Table
   static const String expensesTable = 'expenses';
@@ -26,10 +26,12 @@ class DatabaseHelper {
   static const String colIncomeId = 'id';
   static const String colIncomeAmount = 'amount';
   static const String colIncomeDescription = 'description';
-  static const String colIncomeSource = 'source'; // New column for income source
+  static const String colIncomeSource =
+      'source'; // New column for income source
   static const String colIncomeDate = 'date'; // Unix Timestamp
   static const String colIncomeMonthYear = 'month_year'; // "YYYY-MM"
-  static const String colIncomeIsMonthly = 'is_monthly'; // 0 for false, 1 for true
+  static const String colIncomeIsMonthly =
+      'is_monthly'; // 0 for false, 1 for true
 
   // Categories Table
   static const String categoriesTable = 'categories';
@@ -71,6 +73,21 @@ class DatabaseHelper {
   static const String colSubAmount = 'amount';
   static const String colSubNextDueDate = 'next_due_date';
   static const String colSubIcon = 'icon';
+
+  // Goals Table
+  static const String goalsTable = 'goals';
+  static const String colGoalName = 'name';
+  static const String colTargetAmount = 'targetAmount';
+  static const String colCurrentAmount = 'currentAmount';
+  static const String colTargetDate = 'targetDate';
+  static const String colIcon = 'icon';
+
+  // Badges Table
+  static const String badgesTable = 'badges';
+  static const String colBadgeGoalName = 'goal_name';
+  static const String colBadgeGoalIcon = 'goal_icon';
+  static const String colBadgeTargetAmount = 'target_amount';
+  static const String colBadgeCompletionDate = 'completion_date';
   // Singleton pattern
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
@@ -106,6 +123,14 @@ class DatabaseHelper {
           'ALTER TABLE $expensesTable ADD COLUMN $colScheduledAmount REAL;');
       await db.execute(
           'ALTER TABLE $expensesTable ADD COLUMN $colTransactionType TEXT;');
+    }
+    if (oldVersion < 4) {
+      // Migrate from version 3 to 4
+      await _createGoalsTable(db);
+    }
+    if (oldVersion < 5) {
+      // Migrate from version 4 to 5
+      await _createBadgesTable(db);
     }
   }
 
@@ -171,6 +196,12 @@ class DatabaseHelper {
 
     // Create Subscriptions Table
     await _createSubscriptionsTable(db);
+
+    // Create Goals Table
+    await _createGoalsTable(db);
+
+    // Create Badges Table
+    await _createBadgesTable(db);
   }
 
   Future<void> _createBudgetsTable(Database db) async {
@@ -205,6 +236,31 @@ class DatabaseHelper {
         $colSubAmount REAL NOT NULL,
         $colSubNextDueDate INTEGER NOT NULL,
         $colSubIcon TEXT
+      )
+    ''');
+  }
+
+  Future<void> _createGoalsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $goalsTable (
+        $colId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colGoalName TEXT NOT NULL,
+        $colTargetAmount REAL NOT NULL,
+        $colCurrentAmount REAL NOT NULL,
+        $colTargetDate INTEGER NOT NULL,
+        $colIcon TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createBadgesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE $badgesTable (
+        $colId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $colBadgeGoalName TEXT NOT NULL,
+        $colBadgeGoalIcon TEXT NOT NULL,
+        $colBadgeTargetAmount REAL NOT NULL,
+        $colBadgeCompletionDate INTEGER NOT NULL
       )
     ''');
   }

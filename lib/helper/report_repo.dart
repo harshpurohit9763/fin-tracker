@@ -140,6 +140,42 @@ class ReportRepository {
     return 0.0;
   }
 
+  // Get total for a date range with optional transaction type filtering
+  Future<double> getTotalForDateRangeFiltered(DateTime start, DateTime end,
+      {List<String>? includedTypes, List<String>? excludedTypes}) async {
+    final db = await _dbHelper.database;
+    final endOfDay = DateTime(end.year, end.month, end.day, 23, 59, 59);
+
+    String whereClause =
+        '${DatabaseHelper.colDate} >= ? AND ${DatabaseHelper.colDate} <= ?';
+    List<dynamic> whereArgs = [
+      start.millisecondsSinceEpoch,
+      endOfDay.millisecondsSinceEpoch
+    ];
+
+    if (includedTypes != null && includedTypes.isNotEmpty) {
+      final placeholders = List.filled(includedTypes.length, '?').join(',');
+      whereClause +=
+          ' AND ${DatabaseHelper.colTransactionType} IN ($placeholders)';
+      whereArgs.addAll(includedTypes);
+    } else if (excludedTypes != null && excludedTypes.isNotEmpty) {
+      final placeholders = List.filled(excludedTypes.length, '?').join(',');
+      whereClause +=
+          ' AND (${DatabaseHelper.colTransactionType} NOT IN ($placeholders) OR ${DatabaseHelper.colTransactionType} IS NULL)';
+      whereArgs.addAll(excludedTypes);
+    }
+
+    final result = await db.rawQuery(
+      'SELECT SUM(${DatabaseHelper.colAmount}) as total FROM ${DatabaseHelper.expensesTable} WHERE $whereClause',
+      whereArgs,
+    );
+
+    if (result.isNotEmpty && result.first['total'] != null) {
+      return (result.first['total'] as num).toDouble();
+    }
+    return 0.0;
+  }
+
   // Get spending for last 6 months (for dashboard)
   Future<Map<String, double>> getLast6MonthsSpending() async {
     final db = await _dbHelper.database;
