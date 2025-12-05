@@ -60,74 +60,88 @@ class _ManageAssetsScreenState extends ConsumerState<ManageAssetsScreen> {
     final currency = ref.watch(currencyProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        leading: _isSelectionMode
-            ? IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: _exitSelectionMode,
-              )
-            : null,
-        title: Text(_isSelectionMode
-            ? '${_selectedAssets.length} selected'
-            : 'Manage Assets'),
-        actions: _isSelectionMode
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _confirmDeleteMultiple(context, ref),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true, // Keep it pinned for the actions
+            leading: _isSelectionMode
+                ? IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: _exitSelectionMode,
+                  )
+                : null,
+            title: Text(_isSelectionMode
+                ? '${_selectedAssets.length} selected'
+                : 'Manage Assets'),
+            actions: _isSelectionMode
+                ? [
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => _confirmDeleteMultiple(context, ref),
+                    ),
+                  ]
+                : [],
+          ),
+          assetsAsync.when(
+            data: (assets) {
+              if (assets.isEmpty) {
+                return const SliverFillRemaining(
+                    child: Center(child: Text('No assets added yet.')));
+              }
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final asset = assets[index];
+                    final isSelected = _selectedAssets.contains(asset.id!);
+                    return ListTile(
+                      tileColor: isSelected
+                          ? Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withOpacity(0.2)
+                          : null,
+                      leading: CircleAvatar(
+                        child: Icon(
+                            _availableIcons[asset.icon] ?? Icons.question_mark),
+                      ),
+                      title: Text(asset.name),
+                      trailing: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(AppFormatters.formatCurrency(
+                              asset.value, currency)),
+                          if (asset.yearlyAppreciation != null &&
+                              asset.yearlyAppreciation! > 0)
+                            Text('${asset.yearlyAppreciation}% p.a.',
+                                style: const TextStyle(
+                                    color: Colors.green, fontSize: 12)),
+                        ],
+                      ),
+                      onTap: () {
+                        if (_isSelectionMode) {
+                          _toggleSelection(asset.id!);
+                        } else {
+                          _showAddEditAssetDialog(context, ref, asset: asset);
+                        }
+                      },
+                      onLongPress: () {
+                        if (!_isSelectionMode) {
+                          _enterSelectionMode(asset.id!);
+                        }
+                      },
+                    );
+                  },
+                  childCount: assets.length,
                 ),
-              ]
-            : [],
-      ),
-      body: assetsAsync.when(
-        data: (assets) {
-          if (assets.isEmpty) {
-            return const Center(child: Text('No assets added yet.'));
-          }
-          return ListView.builder(
-            itemCount: assets.length,
-            itemBuilder: (context, index) {
-              final asset = assets[index];
-              final isSelected = _selectedAssets.contains(asset.id!);
-              return ListTile(
-                tileColor: isSelected
-                    ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-                    : null,
-                leading: CircleAvatar(
-                  child:
-                      Icon(_availableIcons[asset.icon] ?? Icons.question_mark),
-                ),
-                title: Text(asset.name),
-                trailing: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(AppFormatters.formatCurrency(asset.value, currency)),
-                    if (asset.yearlyAppreciation != null &&
-                        asset.yearlyAppreciation! > 0)
-                      Text('${asset.yearlyAppreciation}% p.a.',
-                          style: const TextStyle(
-                              color: Colors.green, fontSize: 12)),
-                  ],
-                ),
-                onTap: () {
-                  if (_isSelectionMode) {
-                    _toggleSelection(asset.id!);
-                  } else {
-                    _showAddEditAssetDialog(context, ref, asset: asset);
-                  }
-                },
-                onLongPress: () {
-                  if (!_isSelectionMode) {
-                    _enterSelectionMode(asset.id!);
-                  }
-                },
               );
             },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+            loading: () => const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator())),
+            error: (err, stack) =>
+                SliverFillRemaining(child: Center(child: Text('Error: $err'))),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEditAssetDialog(context, ref),

@@ -15,70 +15,85 @@ class IncomeScreen extends ConsumerWidget {
     final incomeListAsyncValue = ref.watch(filteredIncomeListProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Monthly Income'),
-        actions: const [
-          // Use the new widget in the AppBar
-          MonthYearSelector(placement: SelectorPlacement.appBar),
-          SizedBox(width: 10), // Maintain original spacing
-        ],
-      ),
-      body: incomeListAsyncValue.when(
-        data: (incomes) {
-          if (incomes.isEmpty) {
-            return const Center(
-              child: Text('No income recorded for this month.'),
-            );
-          }
-          return ListView.builder(
-            itemCount: incomes.length,
-            itemBuilder: (context, index) {
-              final income = incomes[index];
-              return IncomeCard(
-                income: income,
-                onEdit: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddIncomeScreen(income: income),
-                    ),
-                  );
-                },
-                onDelete: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: const Text('Confirm Deletion'),
-                        content: const Text(
-                            'Are you sure you want to delete this income entry?'),
-                        actions: <Widget>[
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop(); // Dismiss the dialog
-                            },
-                            child: const Text('Cancel'),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: const Text('Monthly Income'),
+            floating: true,
+            snap: true,
+            actions: const [
+              // Use the new widget in the AppBar
+              MonthYearSelector(placement: SelectorPlacement.appBar),
+              SizedBox(width: 10), // Maintain original spacing
+            ],
+          ),
+          incomeListAsyncValue.when(
+            data: (incomes) {
+              if (incomes.isEmpty) {
+                return const SliverFillRemaining(
+                  child: Center(
+                    child: Text('No income recorded for this month.'),
+                  ),
+                );
+              }
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final income = incomes[index];
+                    return IncomeCard(
+                      income: income,
+                      onEdit: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                AddIncomeScreen(income: income),
                           ),
-                          TextButton(
-                            onPressed: () {
-                              ref
-                                  .read(incomeListProvider.notifier)
-                                  .deleteIncome(income.id!);
-                              Navigator.of(context).pop(); // Dismiss the dialog
-                            },
-                            child: const Text('Delete'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
+                        );
+                      },
+                      onDelete: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('Confirm Deletion'),
+                              content: const Text(
+                                  'Are you sure you want to delete this income entry?'),
+                              actions: <Widget>[
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context)
+                                        .pop(); // Dismiss the dialog
+                                  },
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    ref
+                                        .read(incomeListProvider.notifier)
+                                        .deleteIncome(income.id!);
+                                    Navigator.of(context)
+                                        .pop(); // Dismiss the dialog
+                                  },
+                                  child: const Text('Delete'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                  childCount: incomes.length,
+                ),
               );
             },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Error: $error')),
+            loading: () => const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator())),
+            error: (error, stack) =>
+                SliverFillRemaining(child: Center(child: Text('Error: $error'))),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

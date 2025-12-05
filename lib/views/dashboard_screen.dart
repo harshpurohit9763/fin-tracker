@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_finance/widgets/add_expense.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:personal_finance/views/advanced_reports_screen.dart';
 import 'package:personal_finance/views/budgets_screen.dart';
 import 'package:personal_finance/controllers/expense_provider.dart';
@@ -37,7 +37,6 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  bool _showFabOptions = false;
   bool _showUpcomingEmis = false;
 
   @override
@@ -62,10 +61,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ref.watch(emiListProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 0, // We will build our own app bar in the body
-        elevation: 0,
-      ),
       body: RefreshIndicator(
         onRefresh: () async {
           // Invalidate all dashboard providers to refresh
@@ -96,17 +91,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 }
 
                 return SliverAppBar(
-                  pinned: true,
-                  floating: false,
+                  pinned: false,
+                  floating: true,
+                  snap: true,
                   expandedHeight: hasEmi
-                      ?
-                      // Calculate height: card height + overlap for other cards
-                      (MediaQuery.of(context).size.width - 48) / 1.586 +
-                          (emis.length * 10)
+                      ? (1.sw - 48.w) / 1.586 + (emis.length * 10.h)
                       : kToolbarHeight,
                   flexibleSpace: FlexibleSpaceBar(
                     titlePadding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                     centerTitle: false,
                     title: hasEmi
                         ? null // Hide title when EMI card is visible
@@ -117,19 +110,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(_getGreeting(),
-                                    style:
-                                        Theme.of(context).textTheme.labelLarge),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(fontSize: 12.sp)),
                                 Text('$userName!',
                                     style: Theme.of(context)
                                         .textTheme
-                                        .titleMedium),
+                                        .titleMedium
+                                        ?.copyWith(fontSize: 16.sp)),
                               ],
                             ),
                           ),
                     background: hasEmi
                         ? Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding: EdgeInsets.only(
+                                top: kToolbarHeight, left: 16.w, right: 16.w),
                             child: OverlappingCardView(
                               children: emis.map((emi) {
                                 return FlippableEmiCard(
@@ -150,7 +146,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             icon: const CircleAvatar(child: Icon(Icons.person)),
                             onPressed: navigateToProfile,
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8.w),
                         ],
                 );
               },
@@ -159,7 +155,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   const SliverToBoxAdapter(child: SizedBox.shrink()),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 100.0),
+              padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
               sliver: SliverList(
                 delegate: SliverChildListDelegate(
                   [
@@ -177,7 +173,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               icon: Icons.show_chart,
                               color: Theme.of(context).colorScheme.primary,
                               onIconTap: () {
-                                debugPrint('This Month\'s Spending icon tapped!');
+                                debugPrint(
+                                    'This Month\'s Spending icon tapped!');
                                 // Navigate to a detailed spending report or similar
                               },
                             ),
@@ -187,7 +184,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 icon: Icons.show_chart,
                                 color: Colors.grey,
                                 onIconTap: () {
-                                  debugPrint('This Month\'s Spending icon tapped!');
+                                  debugPrint(
+                                      'This Month\'s Spending icon tapped!');
                                 }),
                             error: (e, s) => MetricCard(
                                 title: "Month's Spending",
@@ -195,11 +193,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 icon: Icons.error,
                                 color: Colors.redAccent,
                                 onIconTap: () {
-                                  debugPrint('This Month\'s Spending icon tapped!');
+                                  debugPrint(
+                                      'This Month\'s Spending icon tapped!');
                                 }),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16.w),
                         Expanded(
                           child: GestureDetector(
                             onTap: () {
@@ -236,31 +235,37 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
 
                     // EMI Due Panel
                     if (_showUpcomingEmis) ...[
                       Text('Upcoming EMI Payments',
-                          style: Theme.of(context).textTheme.titleLarge),
-                      const SizedBox(height: 16),
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(fontSize: 20.sp)),
+                      SizedBox(height: 16.h),
                       const UpcomingEmiPanel(),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24.h),
                     ],
 
                     // Monthly Trend Bar Chart
                     const MonthlyTrendChart(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24.h),
 
                     // Financial Tools Grid
                     Text('Financial Tools',
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 16),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontSize: 20.sp)),
+                    SizedBox(height: 16.h),
                     GridView.count(
                       crossAxisCount: 2,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16.w,
+                      mainAxisSpacing: 16.h,
                       childAspectRatio: 1.2,
                       children: [
                         _FeatureTile(
@@ -317,7 +322,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
       ),
-
     );
   }
 }
@@ -338,44 +342,57 @@ class _FeatureTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final lightShadow = Color.lerp(backgroundColor, Colors.white, 0.1)!;
+    final darkShadow = Color.lerp(backgroundColor, Colors.black, 0.1)!;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(24.r),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+              color: darkShadow,
+              blurRadius: 10.r,
+              offset: Offset(5.w, 5.h),
+            ),
+            BoxShadow(
+              color: lightShadow,
+              blurRadius: 10.r,
+              offset: Offset(-5.w, -5.h),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color, // Use the provided color for the background
+        padding: EdgeInsets.all(12.w),
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 56.w,
+                height: 56.h,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color, // Use the provided color for the background
+                ),
+                child: Icon(icon,
+                    size: 28.sp, color: Colors.white), // Icon color is white
               ),
-              child: Icon(icon, size: 28, color: Colors.white), // Icon color is white
-            ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-            ),
-          ],
+              SizedBox(height: 12.h),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14.sp,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );

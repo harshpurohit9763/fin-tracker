@@ -16,46 +16,59 @@ class ExpenseListScreen extends ConsumerWidget {
     final expensesAsyncValue = ref.watch(filteredExpenseListProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('All Expenses'),
-        actions: const [
-          // Use the new widget in the AppBar
-          MonthYearSelector(placement: SelectorPlacement.appBar),
-          SizedBox(width: 10), // Maintain original spacing
-        ],
-      ),
-      body: expensesAsyncValue.when(
-        data: (expenses) {
-          if (expenses.isEmpty) {
-            return const Center(
-              child: Text(
-                'No expenses recorded yet.',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-              ),
-            );
-          }
-          return ListView.builder(
-            itemCount: expenses.length,
-            itemBuilder: (context, index) {
-              final expense = expenses[index];
-              return ExpenseListItem(
-                expense: expense,
-                currency: currency,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddExpenseScreen(expense: expense),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: const Text('All Expenses'),
+            floating: true,
+            snap: true,
+            actions: const [
+              // Use the new widget in the AppBar
+              MonthYearSelector(placement: SelectorPlacement.appBar),
+              SizedBox(width: 10), // Maintain original spacing
+            ],
+          ),
+          expensesAsyncValue.when(
+            data: (expenses) {
+              if (expenses.isEmpty) {
+                return const SliverFillRemaining(
+                  child: Center(
+                    child: Text(
+                      'No expenses recorded yet.',
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
                     ),
-                  );
-                },
-                // onDelete: () => _confirmDelete(context, ref, expense.id!),
+                  ),
+                );
+              }
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final expense = expenses[index];
+                    return ExpenseListItem(
+                      expense: expense,
+                      currency: currency,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                AddExpenseScreen(expense: expense),
+                          ),
+                        );
+                      },
+                      // onDelete: () => _confirmDelete(context, ref, expense.id!),
+                    );
+                  },
+                  childCount: expenses.length,
+                ),
               );
             },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+            loading: () => const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator())),
+            error: (err, stack) =>
+                SliverFillRemaining(child: Center(child: Text('Error: $err'))),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

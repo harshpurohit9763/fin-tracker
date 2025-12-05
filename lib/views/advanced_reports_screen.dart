@@ -102,16 +102,20 @@ class _AdvancedReportsScreenState extends ConsumerState<AdvancedReportsScreen> {
             margin: const EdgeInsets.all(16.0), // Equivalent to mx-auto p-6
             padding: const EdgeInsets.all(24.0),
             decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(40.0), // rounded-[40px]
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1), // shadow-2xl (approx)
-                  blurRadius: 20,
-                  spreadRadius: 2,
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(5, 5),
+                ),
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.7),
+                  blurRadius: 10,
+                  offset: const Offset(-5, -5),
                 ),
               ],
-              border: Border.all(
-                  color: Colors.white, width: 1.0), // border border-white
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,8 +140,6 @@ class _AdvancedReportsScreenState extends ConsumerState<AdvancedReportsScreen> {
                 const _BudgetSummaryCard(), // Keep existing Flutter functionality
                 const SizedBox(height: 24),
                 const _CategoryBreakdownCard(),
-                const SizedBox(height: 24),
-                const _TransactionListCard(),
               ],
             ),
           ),
@@ -171,141 +173,170 @@ class _FilterBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final rangeType = ref.watch(reportDateRangeTypeProvider);
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final lightShadow = Color.lerp(backgroundColor, Colors.white, 0.1)!;
+    final darkShadow = Color.lerp(backgroundColor, Colors.black, 0.1)!;
 
-    return Card(
-      // Equivalent to Card className="p-4 mb-6 rounded-2xl shadow-sm border border-indigo-50"
-      margin: EdgeInsets.zero, // Remove default Card margin
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: darkShadow,
+            blurRadius: 5,
+            offset: const Offset(2, 2),
+          ),
+          BoxShadow(
+            color: lightShadow,
+            blurRadius: 5,
+            offset: const Offset(-2, -2),
+          ),
+        ],
       ),
-      elevation: 1, // shadow-sm
-      color: Theme.of(context).cardColor,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: Colors.indigo.shade50), // border border-indigo-50
-        ),
-        padding: const EdgeInsets.all(16.0), // p-4
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
-            Row(
-              children: [
-                Icon(Icons.calendar_today,
-                    size: 18, color: Colors.blueGrey.shade700), // Calendar icon
-                const SizedBox(width: 8), // gap-2
-                Text(
-                  'Report Period',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold, // font-bold
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12), // mb-3 (approx)
+      padding: const EdgeInsets.all(16.0), // p-4
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+          Row(
+            children: [
+              Icon(Icons.calendar_today,
+                  size: 18, color: Colors.blueGrey.shade700), // Calendar icon
+              const SizedBox(width: 8), // gap-2
+              Text(
+                'Report Period',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold, // font-bold
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12), // mb-3 (approx)
 
-            // Original content of _FilterBar
-            // Date Range and Account Filters
+          // Original content of _FilterBar
+          // Date Range and Account Filters
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<ReportDateRangeType>(
+                  value: rangeType,
+                  onChanged: (newValue) {
+                    if (newValue == ReportDateRangeType.custom) {
+                      _selectCustomDateRange(context, ref);
+                    } else {
+                      ref.read(reportDateRangeTypeProvider.notifier).state =
+                          newValue!;
+                    }
+                  },
+                  items: const [
+                    DropdownMenuItem(
+                        value: ReportDateRangeType.thisMonth,
+                        child: Text('This Month')),
+                    DropdownMenuItem(
+                        value: ReportDateRangeType.last7Days,
+                        child: Text('Last 7 Days')),
+                    DropdownMenuItem(
+                        value: ReportDateRangeType.last30Days,
+                        child: Text('Last 30 Days')),
+                    DropdownMenuItem(
+                        value: ReportDateRangeType.custom,
+                        child: Text('Custom Range...')),
+                    DropdownMenuItem(
+                        value: ReportDateRangeType.selectedMonthYear,
+                        child: Text('Select Month/Year')),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: 'Report Period',
+                    border: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+                    ),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (rangeType == ReportDateRangeType.selectedMonthYear) ...[
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
-                  child: DropdownButtonFormField<ReportDateRangeType>(
-                    value: rangeType,
+                  child: DropdownButtonFormField<int>(
+                    value: ref.watch(selectedMonthProvider),
                     onChanged: (newValue) {
-                      if (newValue == ReportDateRangeType.custom) {
-                        _selectCustomDateRange(context, ref);
-                      } else {
+                      if (newValue != null) {
+                        ref.read(selectedMonthProvider.notifier).state =
+                            newValue;
                         ref.read(reportDateRangeTypeProvider.notifier).state =
-                            newValue!;
+                            ReportDateRangeType.selectedMonthYear;
                       }
                     },
-                    items: const [
-                      DropdownMenuItem(
-                          value: ReportDateRangeType.thisMonth,
-                          child: Text('This Month')),
-                      DropdownMenuItem(
-                          value: ReportDateRangeType.last7Days,
-                          child: Text('Last 7 Days')),
-                      DropdownMenuItem(
-                          value: ReportDateRangeType.last30Days,
-                          child: Text('Last 30 Days')),
-                      DropdownMenuItem(
-                          value: ReportDateRangeType.custom,
-                          child: Text('Custom Range...')),
-                      DropdownMenuItem(
-                          value: ReportDateRangeType.selectedMonthYear,
-                          child: Text('Select Month/Year')),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'Report Period',
-                      border: OutlineInputBorder(),
+                    items: List.generate(12, (index) {
+                      final month = index + 1;
+                      return DropdownMenuItem(
+                        value: month,
+                        child: Text(AppFormatters.getMonthName(month)),
+                      );
+                    }),
+                    decoration: InputDecoration(
+                      labelText: 'Month',
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    value: ref.watch(selectedYearProvider),
+                    onChanged: (newValue) {
+                      if (newValue != null) {
+                        ref.read(selectedYearProvider.notifier).state =
+                            newValue;
+                        ref.read(reportDateRangeTypeProvider.notifier).state =
+                            ReportDateRangeType.selectedMonthYear;
+                      }
+                    },
+                    items: List.generate(5, (index) {
+                      // Show current year and 4 previous years
+                      final year = DateTime.now().year - index;
+                      return DropdownMenuItem(
+                        value: year,
+                        child: Text(year.toString()),
+                      );
+                    }),
+                    decoration: InputDecoration(
+                      labelText: 'Year',
+                      border: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+                      ),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-            if (rangeType == ReportDateRangeType.selectedMonthYear) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      value: ref.watch(selectedMonthProvider),
-                      onChanged: (newValue) {
-                        if (newValue != null) {
-                          ref.read(selectedMonthProvider.notifier).state =
-                              newValue;
-                          ref.read(reportDateRangeTypeProvider.notifier).state =
-                              ReportDateRangeType.selectedMonthYear;
-                        }
-                      },
-                      items: List.generate(12, (index) {
-                        final month = index + 1;
-                        return DropdownMenuItem(
-                          value: month,
-                          child: Text(AppFormatters.getMonthName(month)),
-                        );
-                      }),
-                      decoration: const InputDecoration(
-                        labelText: 'Month',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      value: ref.watch(selectedYearProvider),
-                      onChanged: (newValue) {
-                        if (newValue != null) {
-                          ref.read(selectedYearProvider.notifier).state =
-                              newValue;
-                          ref.read(reportDateRangeTypeProvider.notifier).state =
-                              ReportDateRangeType.selectedMonthYear;
-                        }
-                      },
-                      items: List.generate(5, (index) {
-                        // Show current year and 4 previous years
-                        final year = DateTime.now().year - index;
-                        return DropdownMenuItem(
-                          value: year,
-                          child: Text(year.toString()),
-                        );
-                      }),
-                      decoration: const InputDecoration(
-                        labelText: 'Year',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }
@@ -319,89 +350,90 @@ class _IncomeVsExpenseCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final breakdownAsync = ref.watch(spendingBreakdownProvider);
     final currency = ref.watch(currencyProvider);
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final lightShadow = Color.lerp(backgroundColor, Colors.white, 0.1)!;
+    final darkShadow = Color.lerp(backgroundColor, Colors.black, 0.1)!;
 
-    return Card(
-      // Equivalent to Card className="p-4 mb-6 rounded-2xl shadow-sm border border-indigo-50"
-      margin: EdgeInsets.zero, // Remove default Card margin
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: darkShadow,
+            blurRadius: 5,
+            offset: const Offset(2, 2),
+          ),
+          BoxShadow(
+            color: lightShadow,
+            blurRadius: 5,
+            offset: const Offset(-2, -2),
+          ),
+        ],
       ),
-      elevation: 1, // shadow-sm
-      color: Theme.of(context).cardColor,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: Colors.indigo.shade50), // border border-indigo-50
-        ),
-        padding: const EdgeInsets.all(16.0), // p-4
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
-            Row(
-              children: [
-                Icon(Icons.account_balance_wallet,
-                    size: 18, color: Colors.blueGrey.shade700), // Wallet icon
-                const SizedBox(width: 8), // gap-2
-                Text(
-                  'Income vs Expense',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold, // font-bold
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                ),
-              ],
-            ), // Closing parenthesis for the Row widget
-            const SizedBox(height: 12), // mb-3 (approx)
-
-            // Original content of _IncomeVsExpenseCard
-            breakdownAsync.when(
-              data: (data) {
-                final totalExpenses = data.needs + data.wants;
-                final netFlow = data.income + data.investments - totalExpenses;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSummaryRow(
-                        context,
-                        'Total Income',
-                        AppFormatters.formatCurrency(data.income, currency),
-                        Colors.blue),
-                    const SizedBox(height: 8),
-                    _buildSummaryRow(
-                        context,
-                        'Total Expenses (Needs + Wants)',
-                        AppFormatters.formatCurrency(totalExpenses, currency),
-                        Colors.red),
-                    const SizedBox(height: 8),
-                    _buildSummaryRow(
-                        context,
-                        'Total Savings (Investments)',
-                        AppFormatters.formatCurrency(
-                            data.investments, currency),
-                        Colors.green),
-                    const Divider(height: 24),
-                    Text('Net Cash Flow',
-                        style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 4),
-                    Text(
-                      AppFormatters.formatCurrency(netFlow, currency),
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
-                          ?.copyWith(
-                              color: netFlow >= 0 ? Colors.green : Colors.red,
-                              fontWeight: FontWeight.bold),
+      padding: const EdgeInsets.all(16.0), // p-4
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+          Row(
+            children: [
+              Icon(Icons.account_balance_wallet,
+                  size: 18, color: Colors.blueGrey.shade700), // Wallet icon
+              const SizedBox(width: 8), // gap-2
+              Text(
+                'Income vs Expense',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold, // font-bold
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                  ],
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Text('Error: $e'),
-            ),
-          ],
-        ),
+              ),
+            ],
+          ), // Closing parenthesis for the Row widget
+          const SizedBox(height: 12), // mb-3 (approx)
+
+          // Original content of _IncomeVsExpenseCard
+          breakdownAsync.when(
+            data: (data) {
+              final totalExpenses = data.needs + data.wants;
+              final netFlow = data.income + data.investments - totalExpenses;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSummaryRow(
+                      context,
+                      'Total Income',
+                      AppFormatters.formatCurrency(data.income, currency),
+                      Colors.blue),
+                  const SizedBox(height: 8),
+                  _buildSummaryRow(
+                      context,
+                      'Total Expenses (Needs + Wants)',
+                      AppFormatters.formatCurrency(totalExpenses, currency),
+                      Colors.red),
+                  const SizedBox(height: 8),
+                  _buildSummaryRow(
+                      context,
+                      'Total Savings (Investments)',
+                      AppFormatters.formatCurrency(data.investments, currency),
+                      Colors.green),
+                  const Divider(height: 24),
+                  Text('Net Cash Flow',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(
+                    AppFormatters.formatCurrency(netFlow, currency),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: netFlow >= 0 ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, s) => Text('Error: $e'),
+          ),
+        ],
       ),
     );
   }
@@ -434,72 +466,76 @@ class _AssetsSummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final assetsAsync = ref.watch(assetListProvider);
     final currency = ref.watch(currencyProvider);
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final lightShadow = Color.lerp(backgroundColor, Colors.white, 0.1)!;
+    final darkShadow = Color.lerp(backgroundColor, Colors.black, 0.1)!;
 
-    return Card(
-      // Equivalent to Card className="p-4 mb-6 rounded-2xl shadow-sm border border-indigo-50"
-      margin: EdgeInsets.zero, // Remove default Card margin
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: darkShadow,
+            blurRadius: 5,
+            offset: const Offset(2, 2),
+          ),
+          BoxShadow(
+            color: lightShadow,
+            blurRadius: 5,
+            offset: const Offset(-2, -2),
+          ),
+        ],
       ),
-      elevation: 1, // shadow-sm
-      color: Theme.of(context).cardColor,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: Colors.indigo.shade50), // border border-indigo-50
-        ),
-        padding: const EdgeInsets.all(16.0), // p-4
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
-            Row(
-              children: [
-                Icon(Icons.bar_chart,
-                    size: 18,
-                    color: Colors.blueGrey.shade700), // BarChart3 icon
-                const SizedBox(width: 8), // gap-2
-                Text(
-                  'Asset Summary',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold, // font-bold
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12), // mb-3 (approx)
-
-            // Original content of _AssetsSummaryCard
-            assetsAsync.when(
-              data: (assets) {
-                if (assets.isEmpty) return const Text('No assets added.');
-                final total =
-                    assets.fold<double>(0, (prev, asset) => prev + asset.value);
-                return Column(
-                  children: [
-                    ...assets.map((asset) => ListTile(
-                          title: Text(asset.name),
-                          trailing: Text(AppFormatters.formatCurrency(
-                              asset.value, currency)),
-                        )),
-                    const Divider(),
-                    ListTile(
-                      title: const Text('Total Assets',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      trailing: Text(
-                          AppFormatters.formatCurrency(total, currency),
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+      padding: const EdgeInsets.all(16.0), // p-4
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+          Row(
+            children: [
+              Icon(Icons.bar_chart,
+                  size: 18, color: Colors.blueGrey.shade700), // BarChart3 icon
+              const SizedBox(width: 8), // gap-2
+              Text(
+                'Asset Summary',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold, // font-bold
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                  ],
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Text('Error: $e'),
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12), // mb-3 (approx)
+
+          // Original content of _AssetsSummaryCard
+          assetsAsync.when(
+            data: (assets) {
+              if (assets.isEmpty) return const Text('No assets added.');
+              final total =
+                  assets.fold<double>(0, (prev, asset) => prev + asset.value);
+              return Column(
+                children: [
+                  ...assets.map((asset) => ListTile(
+                        title: Text(asset.name),
+                        trailing: Text(AppFormatters.formatCurrency(
+                            asset.value, currency)),
+                      )),
+                  const Divider(),
+                  ListTile(
+                    title: const Text('Total Assets',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    trailing: Text(
+                        AppFormatters.formatCurrency(total, currency),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, s) => Text('Error: $e'),
+          ),
+        ],
       ),
     );
   }
@@ -511,46 +547,52 @@ class _CategoryBreakdownCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      // Equivalent to Card className="p-4 mb-6 rounded-2xl shadow-sm border border-indigo-50"
-      margin: EdgeInsets.zero, // Remove default Card margin
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
-      ),
-      elevation: 1, // shadow-sm
-      color: Theme.of(context).cardColor,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: Colors.indigo.shade50), // border border-indigo-50
-        ),
-        padding: const EdgeInsets.all(16.0), // p-4
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
-            Row(
-              children: [
-                Icon(Icons.pie_chart,
-                    size: 18, color: Colors.blueGrey.shade700), // PieChart icon
-                const SizedBox(width: 8), // gap-2
-                Text(
-                  'Expense Breakdown',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold, // font-bold
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12), // mb-3 (approx)
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final lightShadow = Color.lerp(backgroundColor, Colors.white, 0.1)!;
+    final darkShadow = Color.lerp(backgroundColor, Colors.black, 0.1)!;
 
-            // Original content of _CategoryBreakdownCard
-            const SizedBox(height: 16),
-            const CategoryPieChartWidget(),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: darkShadow,
+            blurRadius: 5,
+            offset: const Offset(2, 2),
+          ),
+          BoxShadow(
+            color: lightShadow,
+            blurRadius: 5,
+            offset: const Offset(-2, -2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16.0), // p-4
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+          Row(
+            children: [
+              Icon(Icons.pie_chart,
+                  size: 18, color: Colors.blueGrey.shade700), // PieChart icon
+              const SizedBox(width: 8), // gap-2
+              Text(
+                'Expense Breakdown',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold, // font-bold
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12), // mb-3 (approx)
+
+          // Original content of _CategoryBreakdownCard
+          const SizedBox(height: 16),
+          const CategoryPieChartWidget(),
+        ],
       ),
     );
   }
@@ -564,71 +606,76 @@ class _RecurringCostsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final subsAsync = ref.watch(subscriptionListProvider);
     final currency = ref.watch(currencyProvider);
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final lightShadow = Color.lerp(backgroundColor, Colors.white, 0.1)!;
+    final darkShadow = Color.lerp(backgroundColor, Colors.black, 0.1)!;
 
-    return Card(
-      // Equivalent to Card className="p-4 mb-6 rounded-2xl shadow-sm border border-indigo-50"
-      margin: EdgeInsets.zero, // Remove default Card margin
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: darkShadow,
+            blurRadius: 5,
+            offset: const Offset(2, 2),
+          ),
+          BoxShadow(
+            color: lightShadow,
+            blurRadius: 5,
+            offset: const Offset(-2, -2),
+          ),
+        ],
       ),
-      elevation: 1, // shadow-sm
-      color: Theme.of(context).cardColor,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: Colors.indigo.shade50), // border border-indigo-50
-        ),
-        padding: const EdgeInsets.all(16.0), // p-4
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
-            Row(
-              children: [
-                Icon(Icons.repeat,
-                    size: 18, color: Colors.blueGrey.shade700), // Repeat icon
-                const SizedBox(width: 8), // gap-2
-                Text(
-                  'Recurring Costs',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold, // font-bold
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12), // mb-3 (approx)
-
-            // Original content of _RecurringCostsCard
-            subsAsync.when(
-              data: (subs) {
-                if (subs.isEmpty) return const Text('No subscriptions added.');
-                final total =
-                    subs.fold<double>(0, (prev, sub) => prev + sub.amount);
-                return Column(
-                  children: [
-                    ...subs.map((sub) => ListTile(
-                          title: Text(sub.name),
-                          trailing: Text(AppFormatters.formatCurrency(
-                              sub.amount, currency)),
-                        )),
-                    const Divider(),
-                    ListTile(
-                      title: const Text('Total Monthly Cost',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      trailing: Text(
-                          AppFormatters.formatCurrency(total, currency),
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+      padding: const EdgeInsets.all(16.0), // p-4
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+          Row(
+            children: [
+              Icon(Icons.repeat,
+                  size: 18, color: Colors.blueGrey.shade700), // Repeat icon
+              const SizedBox(width: 8), // gap-2
+              Text(
+                'Recurring Costs',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold, // font-bold
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
-                  ],
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Text('Error: $e'),
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12), // mb-3 (approx)
+
+          // Original content of _RecurringCostsCard
+          subsAsync.when(
+            data: (subs) {
+              if (subs.isEmpty) return const Text('No subscriptions added.');
+              final total =
+                  subs.fold<double>(0, (prev, sub) => prev + sub.amount);
+              return Column(
+                children: [
+                  ...subs.map((sub) => ListTile(
+                        title: Text(sub.name),
+                        trailing: Text(
+                            AppFormatters.formatCurrency(sub.amount, currency)),
+                      )),
+                  const Divider(),
+                  ListTile(
+                    title: const Text('Total Monthly Cost',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    trailing: Text(
+                        AppFormatters.formatCurrency(total, currency),
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, s) => Text('Error: $e'),
+          ),
+        ],
       ),
     );
   }
@@ -642,64 +689,69 @@ class _BudgetSummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final overallBudgetAsync = ref.watch(overallBudgetProvider);
     final currency = ref.watch(currencyProvider);
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final lightShadow = Color.lerp(backgroundColor, Colors.white, 0.1)!;
+    final darkShadow = Color.lerp(backgroundColor, Colors.black, 0.1)!;
 
-    return Card(
-      // Equivalent to Card className="p-4 mb-6 rounded-2xl shadow-sm border border-indigo-50"
-      margin: EdgeInsets.zero, // Remove default Card margin
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: darkShadow,
+            blurRadius: 5,
+            offset: const Offset(2, 2),
+          ),
+          BoxShadow(
+            color: lightShadow,
+            blurRadius: 5,
+            offset: const Offset(-2, -2),
+          ),
+        ],
       ),
-      elevation: 1, // shadow-sm
-      color: Theme.of(context).cardColor,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: Colors.indigo.shade50), // border border-indigo-50
-        ),
-        padding: const EdgeInsets.all(16.0), // p-4
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
-            Row(
-              children: [
-                Icon(Icons.attach_money,
-                    size: 18,
-                    color: Colors.blueGrey.shade700), // Custom icon for budget
-                const SizedBox(width: 8), // gap-2
-                Text(
-                  'Budget Performance',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold, // font-bold
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12), // mb-3 (approx)
+      padding: const EdgeInsets.all(16.0), // p-4
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+          Row(
+            children: [
+              Icon(Icons.attach_money,
+                  size: 18,
+                  color: Colors.blueGrey.shade700), // Custom icon for budget
+              const SizedBox(width: 8), // gap-2
+              Text(
+                'Budget Performance',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold, // font-bold
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12), // mb-3 (approx)
 
-            // Original content of _BudgetSummaryCard
-            overallBudgetAsync.when(
-              data: (data) {
-                final spent = data['spent']!;
-                final total = data['total']!;
-                if (total == 0) return const Text('No budgets set.');
-                final percentage = total > 0 ? spent / total : 0.0;
-                return Column(
-                  children: [
-                    LinearProgressIndicator(value: percentage, minHeight: 10),
-                    const SizedBox(height: 8),
-                    Text(
-                        '${AppFormatters.formatCurrency(spent, currency)} of ${AppFormatters.formatCurrency(total, currency)}'),
-                  ],
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Text('Error: $e'),
-            ),
-          ],
-        ),
+          // Original content of _BudgetSummaryCard
+          overallBudgetAsync.when(
+            data: (data) {
+              final spent = data['spent']!;
+              final total = data['total']!;
+              if (total == 0) return const Text('No budgets set.');
+              final percentage = total > 0 ? spent / total : 0.0;
+              return Column(
+                children: [
+                  LinearProgressIndicator(value: percentage, minHeight: 10),
+                  const SizedBox(height: 8),
+                  Text(
+                      '${AppFormatters.formatCurrency(spent, currency)} of ${AppFormatters.formatCurrency(total, currency)}'),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, s) => Text('Error: $e'),
+          ),
+        ],
       ),
     );
   }
@@ -714,85 +766,89 @@ class _TransactionListCard extends ConsumerWidget {
     final expensesAsync = ref.watch(filteredExpensesProvider);
     final incomesAsync = ref.watch(filteredIncomeProvider);
     final currency = ref.watch(currencyProvider);
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final lightShadow = Color.lerp(backgroundColor, Colors.white, 0.1)!;
+    final darkShadow = Color.lerp(backgroundColor, Colors.black, 0.1)!;
 
-    return Card(
-      // Equivalent to Card className="p-4 rounded-2xl shadow-sm border border-indigo-50"
-      margin: EdgeInsets.zero, // Remove default Card margin
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // rounded-2xl (approx 16px)
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: darkShadow,
+            blurRadius: 5,
+            offset: const Offset(2, 2),
+          ),
+          BoxShadow(
+            color: lightShadow,
+            blurRadius: 5,
+            offset: const Offset(-2, -2),
+          ),
+        ],
       ),
-      elevation: 1, // shadow-sm
-      color: Theme.of(context).cardColor,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: Colors.indigo.shade50), // border border-indigo-50
-        ),
-        padding: const EdgeInsets.all(16.0), // p-4
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
-            Row(
-              children: [
-                Icon(Icons.list,
-                    size: 18, color: Colors.blueGrey.shade700), // List icon
-                const SizedBox(width: 8), // gap-2
-                Text(
-                  'Transactions',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold, // font-bold
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12), // mb-3 (approx)
+      padding: const EdgeInsets.all(16.0), // p-4
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Equivalent to h3 className="font-bold mb-3 flex items-center gap-2 text-slate-800"
+          Row(
+            children: [
+              Icon(Icons.list,
+                  size: 18, color: Colors.blueGrey.shade700), // List icon
+              const SizedBox(width: 8), // gap-2
+              Text(
+                'Transactions',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold, // font-bold
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12), // mb-3 (approx)
 
-            // Original content of _TransactionListCard
-            expensesAsync.when(
-              data: (expenses) {
-                return incomesAsync.when(
-                  data: (incomes) {
-                    final allTransactions = <dynamic>[...expenses, ...incomes];
-                    allTransactions.sort((a, b) => b.date.compareTo(a.date));
+          // Original content of _TransactionListCard
+          expensesAsync.when(
+            data: (expenses) {
+              return incomesAsync.when(
+                data: (incomes) {
+                  final allTransactions = <dynamic>[...expenses, ...incomes];
+                  allTransactions.sort((a, b) => b.date.compareTo(a.date));
 
-                    if (allTransactions.isEmpty) {
-                      return const SizedBox(
-                          height: 100,
-                          child: Center(
-                              child: Text('No transactions in this period.')));
-                    }
+                  if (allTransactions.isEmpty) {
+                    return const SizedBox(
+                        height: 100,
+                        child: Center(
+                            child: Text('No transactions in this period.')));
+                  }
 
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: allTransactions.length,
-                      itemBuilder: (context, index) {
-                        final transaction = allTransactions[index];
-                        if (transaction is Expense) {
-                          return ExpenseListItem(
-                            expense: transaction,
-                            currency: currency,
-                          );
-                        } else if (transaction is Income) {
-                          return IncomeCard(income: transaction);
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    );
-                  },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (e, s) => Text('Error loading incomes: $e'),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Text('Error loading expenses: $e'),
-            ),
-          ],
-        ),
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: allTransactions.length,
+                    itemBuilder: (context, index) {
+                      final transaction = allTransactions[index];
+                      if (transaction is Expense) {
+                        return ExpenseListItem(
+                          expense: transaction,
+                          currency: currency,
+                        );
+                      } else if (transaction is Income) {
+                        return IncomeCard(income: transaction);
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, s) => Text('Error loading incomes: $e'),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, s) => Text('Error loading expenses: $e'),
+          ),
+        ],
       ),
     );
   }

@@ -16,105 +16,126 @@ class EmiListScreen extends ConsumerWidget {
     final emisAsyncValue = ref.watch(emiListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('All EMIs & Loans')),
-      body: emisAsyncValue.when(
-        data: (emis) {
-          if (emis.isEmpty) {
-            return const Center(
-              child: Text(
-                'No EMIs added yet.',
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-              ),
-            );
-          }
-          return ListView.builder(
-            itemCount: emis.length,
-            itemBuilder: (context, index) {
-              final emi = emis[index];
-              final isPaidOff = emi.tenureRemainingMonths <= 0;
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: isPaidOff // Use a subtle color from the theme
-                    ? Theme.of(context)
-                        .colorScheme
-                        .primaryContainer
-                        .withOpacity(0.3)
-                    : Theme.of(context).cardColor,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    children: [
-                      ListTile(
-                        title: Text(
-                          emi.loanName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          '${AppFormatters.formatCurrency(emi.monthlyEmiAmount, ref.watch(currencyProvider))} / month',
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(
-                            Icons.delete_outline,
-                            color: Colors.red,
-                          ),
-                          onPressed: () =>
-                              _confirmDelete(context, ref, emi.id!),
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AddEmiScreen(emi: emi),
-                            ),
-                          );
-                        },
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            title: const Text('All EMIs & Loans'),
+            floating: true,
+            snap: true,
+          ),
+          emisAsyncValue.when(
+            data: (emis) {
+              if (emis.isEmpty) {
+                return const SliverFillRemaining(
+                  child: Center(
+                    child: Text(
+                      'No EMIs added yet.',
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                  ),
+                );
+              }
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final emi = emis[index];
+                    final isPaidOff = emi.tenureRemainingMonths <= 0;
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      color: isPaidOff // Use a subtle color from the theme
+                          ? Theme.of(context)
+                              .colorScheme
+                              .primaryContainer
+                              .withOpacity(0.3)
+                          : Theme.of(context).cardColor,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  isPaidOff
-                                      ? 'PAID OFF'
-                                      : 'Next Due: ${AppFormatters.formatDate(emi.nextDueDate)}',
-                                  style: TextStyle(
-                                    color:
-                                        isPaidOff // Use a more vibrant, theme-based color
-                                            ? Theme.of(context)
-                                                .colorScheme
-                                                .primary
-                                            : Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  '${emi.tenureRemainingMonths} months remaining',
-                                ),
-                              ],
-                            ),
-                            if (!isPaidOff)
-                              ElevatedButton(
-                                onPressed: () => _markAsPaid(context, ref, emi),
-                                child: const Text('Mark as Paid'),
+                            ListTile(
+                              title: Text(
+                                emi.loanName,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
                               ),
+                              subtitle: Text(
+                                '${AppFormatters.formatCurrency(emi.monthlyEmiAmount, ref.watch(currencyProvider))} / month',
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () =>
+                                    _confirmDelete(context, ref, emi.id!),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        AddEmiScreen(emi: emi),
+                                  ),
+                                );
+                              },
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        isPaidOff
+                                            ? 'PAID OFF'
+                                            : 'Next Due: ${AppFormatters.formatDate(emi.nextDueDate)}',
+                                        style: TextStyle(
+                                          color: isPaidOff // Use a more vibrant, theme-based color
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .primary
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${emi.tenureRemainingMonths} months remaining',
+                                      ),
+                                    ],
+                                  ),
+                                  if (!isPaidOff)
+                                    ElevatedButton(
+                                      onPressed: () =>
+                                          _markAsPaid(context, ref, emi),
+                                      child: const Text('Mark as Paid'),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    );
+                  },
+                  childCount: emis.length,
                 ),
               );
             },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+            loading: () => const SliverFillRemaining(
+                child: Center(child: CircularProgressIndicator())),
+            error: (err, stack) => SliverFillRemaining(
+              child: Center(child: Text('Error: $err')),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
