@@ -46,27 +46,9 @@ class MonthlyTrendChart extends ConsumerWidget {
         }
 
 
-        final List<BarChartGroupData> barGroups = [];
-        int i = 0;
         double maxY = 0;
-
         for (var entry in data.entries) {
-          final barData = BarChartGroupData(
-            x: i,
-            barRods: [
-              BarChartRodData(
-                toY: entry.value,
-                color: i == data.length - 1
-                    ? Theme.of(context).colorScheme.onSurface // Last bar is accent
-                    : Theme.of(context).colorScheme.primaryContainer, // Other bars are creamy
-                width: 16,
-                borderRadius: BorderRadius.circular(4),
-              )
-            ],
-          );
-          barGroups.add(barData);
           if (entry.value > maxY) maxY = entry.value;
-          i++;
         }
 
         return Container(
@@ -133,29 +115,31 @@ class MonthlyTrendChart extends ConsumerWidget {
               const SizedBox(height: 20),
               SizedBox(
                 height: 180, // Adjust chart height
-                child: BarChart(
-                  BarChartData(
+                child: LineChart(
+                  LineChartData(
                     maxY: maxY * 1.2, // Add 20% padding to top
-                    barTouchData: BarTouchData(
-                      touchTooltipData: BarTouchTooltipData(
-                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                          final month = data.keys.elementAt(group.x);
-                          return BarTooltipItem(
-                            '$month\n',
-                            const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: AppFormatters.formatCurrency(rod.toY, currency),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.normal,
-                                ),
+                    lineTouchData: LineTouchData(
+                      touchTooltipData: LineTouchTooltipData(
+                        getTooltipItems: (touchedSpots) {
+                          return touchedSpots.map((spot) {
+                            final month = data.keys.elementAt(spot.x.toInt());
+                            return LineTooltipItem(
+                              '$month\n',
+                              const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
-                            ],
-                          );
+                              children: [
+                                TextSpan(
+                                  text: AppFormatters.formatCurrency(spot.y, currency),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList();
                         },
                       ),
                     ),
@@ -207,7 +191,29 @@ class MonthlyTrendChart extends ConsumerWidget {
                         );
                       },
                     ),
-                    barGroups: barGroups,
+                    lineBarsData: [
+                      LineChartBarData(
+                          spots: List.generate(data.length, (index) {
+                            return FlSpot(index.toDouble(), data.values.elementAt(index));
+                          }),
+                        isCurved: true,
+                        color: Theme.of(context).colorScheme.primary,
+                        barWidth: 4,
+                        isStrokeCapRound: true,
+                        dotData: const FlDotData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                              Theme.of(context).colorScheme.primary.withOpacity(0.0),
+                            ],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

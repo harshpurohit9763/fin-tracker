@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:personal_finance/views/app_navigation.dart';
 import 'package:personal_finance/db/db_helper.dart';
 import 'package:personal_finance/helper/notification_helper.dart';
-import 'package:personal_finance/views/profile_screen.dart';
 import 'package:personal_finance/controllers/shared_preferences_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -69,6 +69,7 @@ void main() async {
 
   final currency = prefs.getString('currency') ?? 'USD';
   final themeModeString = prefs.getString('themeMode');
+  final isAmoled = prefs.getBool('isAmoled') ?? false;
   final userName = prefs.getString('userName') ?? 'User';
   final accentColorValue = prefs.getInt('accentColor');
 
@@ -76,6 +77,8 @@ void main() async {
   if (themeModeString == 'light') {
     themeMode = ThemeMode.light;
   } else if (themeModeString == 'dark') {
+    themeMode = ThemeMode.dark;
+  } else if (themeModeString == 'amoled') {
     themeMode = ThemeMode.dark;
   } else {
     themeMode = ThemeMode.system;
@@ -87,6 +90,7 @@ void main() async {
         sharedPreferencesProvider.overrideWithValue(prefs),
         currencyProvider.overrideWith((ref) => currency),
         themeProvider.overrideWith((ref) => themeMode),
+        isAmoledProvider.overrideWith((ref) => isAmoled),
         userNameProvider.overrideWith((ref) => userName),
         if (accentColorValue != null)
           accentColorProvider.overrideWith((ref) => Color(accentColorValue)),
@@ -114,27 +118,42 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
+    final isAmoled = ref.watch(isAmoledProvider);
     final accentColor = ref.watch(accentColorProvider);
 
-    return MaterialApp(
-      title: 'Personal Finance',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: accentColor,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
+    final darkTheme = ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: accentColor,
+        brightness: Brightness.dark,
+
+        surface: isAmoled
+            ? Colors.black
+            : const Color(
+                0xFF121212), // Set background to black for AMOLED theme
       ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: accentColor,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
-      themeMode: themeMode,
-      debugShowCheckedModeBanner: false,
-      home: const MainNavigation(),
+      useMaterial3: true,
     );
+
+    return MaterialApp(
+        title: 'Personal Finance',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: accentColor,
+            brightness: Brightness.light,
+          ),
+          useMaterial3: true,
+        ),
+        darkTheme: darkTheme,
+        themeMode: themeMode,
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) {
+          return ScreenUtilInit(
+            designSize: const Size(360, 690),
+            minTextAdapt: true,
+            splitScreenMode: true,
+            child: child,
+          );
+        },
+        home: const MainNavigation());
   }
 }

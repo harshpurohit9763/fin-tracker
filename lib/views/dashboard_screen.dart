@@ -38,6 +38,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _showFabOptions = false;
+  bool _showUpcomingEmis = false;
 
   @override
   void initState() {
@@ -200,48 +201,54 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: upcomingEmisAsync.when(
-                            data: (count) => MetricCard(
-                              title: 'EMIs Due This Week',
-                              value: '$count Payments',
-                              icon: Icons.payment,
-                              color: Theme.of(context).colorScheme.secondary,
-                              onIconTap: () {
-                                debugPrint('EMIs Due This Week icon tapped!');
-                                // Navigate to the EMI list screen or similar
-                              },
-                            ),
-                            loading: () => MetricCard(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _showUpcomingEmis = !_showUpcomingEmis;
+                              });
+                            },
+                            child: upcomingEmisAsync.when(
+                              data: (count) => MetricCard(
                                 title: 'EMIs Due This Week',
-                                value: '...',
+                                value: '$count Payments',
                                 icon: Icons.payment,
-                                color: Colors.grey,
+                                color: Theme.of(context).colorScheme.secondary,
                                 onIconTap: () {
-                                  debugPrint('EMIs Due This Week icon tapped!');
-                                }),
-                            error: (e, s) => MetricCard(
-                                title: 'EMIs Due This Week',
-                                value: 'Error',
-                                icon: Icons.error,
-                                color: Colors.redAccent,
-                                onIconTap: () {
-                                  debugPrint('EMIs Due This Week icon tapped!');
-                                }),
+                                  setState(() {
+                                    _showUpcomingEmis = !_showUpcomingEmis;
+                                  });
+                                },
+                              ),
+                              loading: () => MetricCard(
+                                  title: 'EMIs Due This Week',
+                                  value: '...',
+                                  icon: Icons.payment,
+                                  color: Colors.grey,
+                                  onIconTap: () {}),
+                              error: (e, s) => MetricCard(
+                                  title: 'EMIs Due This Week',
+                                  value: 'Error',
+                                  icon: Icons.error,
+                                  color: Colors.redAccent,
+                                  onIconTap: () {}),
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 24),
 
+                    // EMI Due Panel
+                    if (_showUpcomingEmis) ...[
+                      Text('Upcoming EMI Payments',
+                          style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 16),
+                      const UpcomingEmiPanel(),
+                      const SizedBox(height: 24),
+                    ],
+
                     // Monthly Trend Bar Chart
                     const MonthlyTrendChart(),
-                    const SizedBox(height: 24),
-
-                    // EMI Due Panel
-                    Text('Upcoming EMI Payments',
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 16),
-                    const UpcomingEmiPanel(),
                     const SizedBox(height: 24),
 
                     // Financial Tools Grid
