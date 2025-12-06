@@ -564,6 +564,57 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               },
                             ),
                             ListTile(
+                              leading: Icon(Icons.note_add_outlined,
+                                  size: 20, color: Colors.grey.shade700),
+                              title: const Text('Populate Dummy Data'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Populate Dummy Data?'),
+                                    content: const Text(
+                                        'This will add sample data for demonstration. Do you want to continue?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(ctx).pop(false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.of(ctx).pop(true),
+                                        child: const Text('Populate'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirm == true) {
+                                  await ref
+                                      .read(dummyDataServiceProvider)
+                                      .populateDummyData();
+
+                                  // Invalidate providers to refresh UI
+                                  ref.invalidate(expenseListProvider);
+                                  ref.invalidate(incomeListProvider);
+                                  ref.invalidate(categoryListProvider);
+                                  ref.invalidate(budgetListProvider);
+                                  ref.invalidate(emiListProvider);
+                                  ref.invalidate(subscriptionListProvider);
+                                  ref.invalidate(assetListProvider);
+                                  ref.invalidate(goalListProvider);
+                                  ref.invalidate(badgeListProvider);
+
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                            content:
+                                                Text('Dummy data populated!')));
+                                  }
+                                }
+                              },
+                            ),
+                            ListTile(
                               leading: Icon(Icons.delete_outline,
                                   size: 20, color: Colors.red.shade700),
                               title: const Text(

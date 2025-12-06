@@ -92,7 +92,7 @@ class _AdvancedReportsScreenState extends ConsumerState<AdvancedReportsScreen> {
                 assets: assets,
                 subscriptions: subscriptions,
                 budgetData: budgetData,
-                cashFlowData: cashFlowData,
+                // cashFlowData: cashFlowData,
               );
             },
           ),
