@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/helper/app_formater.dart';
 import 'package:personal_finance/controllers/shared_preferences_provider.dart';
 import 'package:personal_finance/controllers/insights_provider.dart';
+import 'package:personal_finance/helper/themes.dart';
 import 'package:personal_finance/widgets/cash_flow_chart.dart'; // Import the new cash flow chart
 
 import 'manage_subscriptions_screen.dart';
@@ -58,26 +59,13 @@ class _NeedsVsWantsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final breakdownAsync = ref.watch(spendingBreakdownProvider);
     final currency = ref.watch(currencyProvider);
+    final accentColor = ref.watch(accentColorProvider);
+    final themeHelper = ThemeHelper(accentColor);
 
     return breakdownAsync.when(
       data: (data) {
         if (data.total == 0) {
-          return Container(
-            padding: const EdgeInsets.all(20.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                  color:
-                      Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
+          return _SoftCard(
             child: SizedBox(
               height: 150,
               child: Center(
@@ -90,21 +78,7 @@ class _NeedsVsWantsCard extends ConsumerWidget {
             ),
           );
         }
-        return Container(
-          padding: const EdgeInsets.all(20.0),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
+        return _SoftCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -116,7 +90,7 @@ class _NeedsVsWantsCard extends ConsumerWidget {
               const SizedBox(height: 24),
               SizedBox(
                 height: 150,
-                child: _buildPieChart(data, context),
+                child: _buildPieChart(data, context, themeHelper.chartColors),
               ),
               const SizedBox(height: 16),
               _BreakdownRow(
@@ -124,58 +98,31 @@ class _NeedsVsWantsCard extends ConsumerWidget {
                   amount: AppFormatters.formatCurrency(data.needs, currency),
                   percentage:
                       '${(data.needs / data.total * 100).toStringAsFixed(1)}%',
-                  color: Theme.of(context).colorScheme.primary),
+                  color: themeHelper.chartColors[0]),
               _BreakdownRow(
                   title: 'Wants',
                   amount: AppFormatters.formatCurrency(data.wants, currency),
                   percentage:
                       '${(data.wants / data.total * 100).toStringAsFixed(1)}%',
-                  color: Theme.of(context).colorScheme.secondary),
+                  color: themeHelper.chartColors[1]),
               _BreakdownRow(
                   title: 'Investments',
                   amount:
                       AppFormatters.formatCurrency(data.investments, currency),
                   percentage:
                       '${(data.investments / data.total * 100).toStringAsFixed(1)}%',
-                  color: Theme.of(context).colorScheme.tertiary),
+                  color: themeHelper.chartColors.length > 2
+                      ? themeHelper.chartColors[2]
+                      : Colors.orange),
             ],
           ),
         );
       },
-      loading: () => Container(
-        height: 200,
-        padding: const EdgeInsets.all(20.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: const Center(child: CircularProgressIndicator()),
+      loading: () => const _SoftCard(
+        child: SizedBox(
+            height: 200, child: Center(child: CircularProgressIndicator())),
       ),
-      error: (e, s) => Container(
-        height: 200,
-        padding: const EdgeInsets.all(20.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
+      error: (e, s) => _SoftCard(
         child: Center(
             child: Text(
           'Error: $e',
@@ -187,7 +134,8 @@ class _NeedsVsWantsCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildPieChart(SpendingBreakdown data, BuildContext context) {
+  Widget _buildPieChart(
+      SpendingBreakdown data, BuildContext context, List<Color> chartColors) {
     final theme = Theme.of(context);
     return PieChart(
       PieChartData(
@@ -195,16 +143,16 @@ class _NeedsVsWantsCard extends ConsumerWidget {
           PieChartSectionData(
             value: data.needs,
             title: '${(data.needs / data.total * 100).toStringAsFixed(0)}%',
-            color: theme.colorScheme.primary, // Using primary accent color
-            radius: 60, // Adjusted radius
+            color: chartColors[0],
+            radius: 50,
             titleStyle: theme.textTheme.bodySmall
                 ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
           ),
           PieChartSectionData(
             value: data.wants,
             title: '${(data.wants / data.total * 100).toStringAsFixed(0)}%',
-            color: theme.colorScheme.secondary, // Using secondary accent color
-            radius: 60, // Adjusted radius
+            color: chartColors[1],
+            radius: 50,
             titleStyle: theme.textTheme.bodySmall
                 ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
           ),
@@ -212,14 +160,14 @@ class _NeedsVsWantsCard extends ConsumerWidget {
             value: data.investments,
             title:
                 '${(data.investments / data.total * 100).toStringAsFixed(0)}%',
-            color: theme.colorScheme.tertiary, // Using tertiary accent color
-            radius: 60, // Adjusted radius
+            color: chartColors.length > 2 ? chartColors[2] : Colors.orange,
+            radius: 50,
             titleStyle: theme.textTheme.bodySmall
                 ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ],
-        centerSpaceRadius: 40,
-        sectionsSpace: 3, // Adjusted sections space
+        centerSpaceRadius: 30, // Make it a donut chart with thick strokes
+        sectionsSpace: 3,
       ),
     );
   }
@@ -281,21 +229,7 @@ class _SubscriptionTrackerCard extends ConsumerWidget {
     final subscriptionsAsync = ref.watch(subscriptionListProvider);
     final currency = ref.watch(currencyProvider);
 
-    return Container(
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
+    return _SoftCard(
       child: subscriptionsAsync.when(
         data: (subs) {
           final totalMonthlyCost =
@@ -405,19 +339,16 @@ class _SubscriptionTrackerCard extends ConsumerWidget {
             ],
           );
         },
-        loading: () => Container(
-          height: 200,
-          child: const Center(child: CircularProgressIndicator()),
-        ),
-        error: (e, s) => Container(
+        loading: () => const SizedBox(
+            height: 200, child: Center(child: CircularProgressIndicator())),
+        error: (e, s) => SizedBox(
           height: 200,
           child: Center(
-              child: Text(
-            'Error: $e',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                ),
-          )),
+            child: Text(
+              'Error: $e',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
         ),
       ),
     );
@@ -432,21 +363,7 @@ class _CashFlowProjectionCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cashFlowAsync = ref.watch(cashFlowDataProvider);
 
-    return Container(
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
+    return _SoftCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -507,6 +424,46 @@ class _CashFlowProjectionCard extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// A reusable neomorphic card.
+class _SoftCard extends StatelessWidget {
+  final Widget child;
+  const _SoftCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    final lightShadow = isDarkMode
+        ? Colors.white.withOpacity(0.05)
+        : Color.lerp(backgroundColor, Colors.white, 0.7)!;
+    final darkShadow = isDarkMode
+        ? Colors.black.withOpacity(0.4)
+        : Color.lerp(backgroundColor, Colors.black, 0.1)!;
+
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(24.0),
+        boxShadow: [
+          BoxShadow(
+            color: darkShadow,
+            offset: const Offset(4, 4),
+            blurRadius: 15,
+          ),
+          BoxShadow(
+            color: lightShadow,
+            offset: const Offset(-4, -4),
+            blurRadius: 15,
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:personal_finance/views/budgets_screen.dart';
 import 'package:personal_finance/controllers/expense_provider.dart';
 import 'package:personal_finance/views/insights_screen.dart';
 import 'package:personal_finance/views/net_worth_screen.dart';
+import 'package:personal_finance/helper/themes.dart';
 import 'package:personal_finance/helper/app_formater.dart';
 import 'package:personal_finance/controllers/dashboard_provider.dart';
 import 'package:personal_finance/controllers/emi_provider.dart';
@@ -73,9 +74,43 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         },
         child: CustomScrollView(
           slivers: [
+            SliverToBoxAdapter(
+              child: _DashboardHeader(),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: monthSpendingAsync.when(
+                  data: (total) {
+                    final themeHelper =
+                        ThemeHelper(Theme.of(context).colorScheme.primary);
+                    return _ProminentMetricCard(
+                      title: "Month's Spending",
+                      value: AppFormatters.formatCurrency(total, currency),
+                      icon: Icons.show_chart,
+                      gradient: themeHelper.primaryGradient,
+                    );
+                  },
+                  loading: () => _ProminentMetricCard(
+                    title: "Month's Spending",
+                    value: '...',
+                    icon: Icons.show_chart,
+                    gradient: LinearGradient(
+                        colors: [Colors.grey, Colors.grey.shade600]),
+                  ),
+                  error: (e, s) => _ProminentMetricCard(
+                    title: "Month's Spending",
+                    value: 'Error',
+                    icon: Icons.error,
+                    gradient: LinearGradient(
+                        colors: [Colors.red, Colors.red.shade800]),
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: 24.h)),
             nextEmiAsync.when(
               data: (allEmis) {
-                // Only show unpaid EMIs
                 final now = DateTime.now();
                 final endOfWeek = now.add(Duration(days: 7 - now.weekday));
                 final emis = allEmis
@@ -83,73 +118,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         e.tenureRemainingMonths > 0 &&
                         e.nextDueDate.isBefore(endOfWeek))
                     .toList();
-                final hasEmi = emis.isNotEmpty;
-                void navigateToProfile() {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const ProfileScreen()),
-                  );
+                if (emis.isEmpty) {
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
                 }
-
-                return SliverAppBar(
-                  pinned: false,
-                  floating: true,
-                  snap: true,
-                  expandedHeight: hasEmi
-                      ? (1.sw - 48.w) / 1.586 + (emis.length * 10.h)
-                      : kToolbarHeight,
-                  flexibleSpace: FlexibleSpaceBar(
-                    titlePadding:
-                        EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                    centerTitle: false,
-                    title: hasEmi
-                        ? null // Hide title when EMI card is visible
-                        : FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(_getGreeting(),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelLarge
-                                        ?.copyWith(fontSize: 12.sp)),
-                                Text('$userName!',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(fontSize: 16.sp)),
-                              ],
-                            ),
-                          ),
-                    background: hasEmi
-                        ? Padding(
-                            padding: EdgeInsets.only(
-                                top: kToolbarHeight, left: 16.w, right: 16.w),
-                            child: OverlappingCardView(
-                              children: emis.map((emi) {
-                                return FlippableEmiCard(
-                                  emi: emi,
-                                  currency: currency,
-                                  userName: userName,
-                                  onProfileTap: navigateToProfile,
-                                );
-                              }).toList(),
-                            ),
-                          )
-                        : null,
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    // The PageView inside OverlappingCardView needs a constrained height.
+                    child: SizedBox(
+                      // Calculate height based on card aspect ratio (1.586) and overlap.
+                      height:
+                          (1.sw - 32.w) / 1.586 + ((emis.length - 1) * 20.h),
+                      child: OverlappingCardView(
+                        children: emis.map((emi) {
+                          return FlippableEmiCard(
+                            emi: emi,
+                            currency: currency,
+                            userName: userName,
+                            onProfileTap: () {},
+                          );
+                        }).toList(),
+                      ),
+                    ),
                   ),
-                  actions: hasEmi
-                      ? [] // No actions when EMI card is shown
-                      : [
-                          IconButton(
-                            icon: const CircleAvatar(child: Icon(Icons.person)),
-                            onPressed: navigateToProfile,
-                          ),
-                          SizedBox(width: 8.w),
-                        ],
                 );
               },
               loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
@@ -157,11 +148,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   const SliverToBoxAdapter(child: SizedBox.shrink()),
             ),
             SliverPadding(
-              padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate(
+                padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 100.h),
+                sliver: SliverList(
+                    delegate: SliverChildListDelegate(
                   [
-                    // Key Metrics Cards
+                    // Other metric cards
+                    monthSavingsAsync.when(
+                      data: (total) => _MetricSummaryCard(
+                        title: "Month's Savings",
+                        value: AppFormatters.formatCurrency(total, currency),
+                        icon: Icons.savings_outlined,
+                        color: Colors.green,
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const FinancialGoalsScreen()));
+                        },
+                      ),
+                      loading: () => _MetricSummaryCard(
+                          title: "Month's Savings",
+                          value: '...',
+                          icon: Icons.savings_outlined,
+                          color: Colors.grey,
+                          onTap: () {}),
+                      error: (e, s) => _MetricSummaryCard(
+                          title: "Month's Savings",
+                          value: 'Error',
+                          icon: Icons.error,
+                          color: Colors.redAccent,
+                          onTap: () {}),
+                    ),
+                    SizedBox(height: 24.h),
+                    // The old layout had two cards in a row. Now they are stacked.
+                    /*
                     Row(
                       children: [
                         Expanded(
@@ -233,6 +254,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 onIconTap: () {}),
                           ),
                         ),
+                        
                       ],
                     ),
                     SizedBox(height: 24.h),
@@ -247,7 +269,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       SizedBox(height: 16.h),
                       const UpcomingEmiPanel(),
                       SizedBox(height: 24.h),
-                    ],
+                      */
 
                     // Monthly Trend Bar Chart
                     const MonthlyTrendChart(),
@@ -327,11 +349,58 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ],
                     ),
                   ],
-                ),
-              ),
-            ),
+                )))
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DashboardHeader extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userName = ref.watch(userNameProvider);
+
+    void navigateToProfile() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ProfileScreen()),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+          16.w, 16.h + MediaQuery.of(context).padding.top, 16.w, 16.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _getGreeting(),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              Text(
+                '$userName!',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+          GestureDetector(
+            onTap: navigateToProfile,
+            child: CircleAvatar(
+              radius: 24.r,
+              child: const Icon(Icons.person),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -342,7 +411,7 @@ class _FeatureTile extends StatelessWidget {
   final String title;
   final IconData icon;
   final VoidCallback onTap;
-  final Color color; // This color will be used for the icon background
+  final Color color;
 
   const _FeatureTile({
     required this.title,
@@ -354,25 +423,25 @@ class _FeatureTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
-    final lightShadow = Color.lerp(backgroundColor, Colors.white, 0.1)!;
-    final darkShadow = Color.lerp(backgroundColor, Colors.black, 0.1)!;
+    final lightShadow = Color.lerp(backgroundColor, Colors.white, 0.4)!;
+    final darkShadow = Color.lerp(backgroundColor, Colors.black, 0.15)!;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(24.r),
+          borderRadius: BorderRadius.circular(24.0),
           boxShadow: [
             BoxShadow(
               color: darkShadow,
-              blurRadius: 10.r,
-              offset: Offset(5.w, 5.h),
+              offset: const Offset(5, 5),
+              blurRadius: 15,
             ),
             BoxShadow(
               color: lightShadow,
-              blurRadius: 10.r,
-              offset: Offset(-5.w, -5.h),
+              offset: const Offset(-5, -5),
+              blurRadius: 15,
             ),
           ],
         ),
@@ -387,10 +456,9 @@ class _FeatureTile extends StatelessWidget {
                 height: 56.h,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: color, // Use the provided color for the background
+                  color: color,
                 ),
-                child: Icon(icon,
-                    size: 28.sp, color: Colors.white), // Icon color is white
+                child: Icon(icon, size: 28.sp, color: Colors.white),
               ),
               SizedBox(height: 12.h),
               Text(
@@ -405,6 +473,118 @@ class _FeatureTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Neomorphic styled card for secondary metrics.
+class _MetricSummaryCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _MetricSummaryCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final lightShadow = Color.lerp(backgroundColor, Colors.white, 0.4)!;
+    final darkShadow = Color.lerp(backgroundColor, Colors.black, 0.15)!;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(24.0),
+          boxShadow: [
+            BoxShadow(
+                color: darkShadow, offset: const Offset(4, 4), blurRadius: 15),
+            BoxShadow(
+                color: lightShadow,
+                offset: const Offset(-4, -4),
+                blurRadius: 15),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                Icon(icon, color: color, size: 24.sp),
+              ],
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              value,
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A prominent card with a gradient background.
+class _ProminentMetricCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Gradient gradient;
+
+  const _ProminentMetricCard({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.gradient,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(24.w),
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(24.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(color: Colors.white)),
+          SizedBox(height: 8.h),
+          Text(value,
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineMedium
+                  ?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
+        ],
       ),
     );
   }

@@ -24,18 +24,16 @@ class ManageSubscriptionsScreen extends ConsumerWidget {
           if (subs.isEmpty) {
             return const Center(child: Text('No subscriptions added yet.'));
           }
-          return ListView.builder(
+          return ListView.separated(
+            padding: const EdgeInsets.all(16.0),
             itemCount: subs.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final sub = subs[index];
-              return ListTile(
-                title: Text(sub.name),
-                subtitle: Text(
-                    'Next due: ${AppFormatters.formatDate(sub.nextDueDate)}'),
-                trailing:
-                    Text(AppFormatters.formatCurrency(sub.amount, currency)),
-                onTap: () => _showAddEditDialog(context, ref, sub: sub),
-              );
+              return _SubscriptionItem(
+                  sub: sub,
+                  currency: currency,
+                  onTap: () => _showAddEditDialog(context, ref, sub: sub));
             },
           );
         },
@@ -153,6 +151,79 @@ class ManageSubscriptionsScreen extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _SubscriptionItem extends StatelessWidget {
+  final Subscription sub;
+  final String currency;
+  final VoidCallback onTap;
+
+  const _SubscriptionItem(
+      {required this.sub, required this.currency, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    final lightShadow = isDarkMode
+        ? Colors.white.withOpacity(0.05)
+        : Color.lerp(backgroundColor, Colors.white, 0.7)!;
+    final darkShadow = isDarkMode
+        ? Colors.black.withOpacity(0.4)
+        : Color.lerp(backgroundColor, Colors.black, 0.1)!;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(24.0),
+          boxShadow: [
+            BoxShadow(
+                color: darkShadow, offset: const Offset(4, 4), blurRadius: 15),
+            BoxShadow(
+                color: lightShadow,
+                offset: const Offset(-4, -4),
+                blurRadius: 15),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(Icons.receipt_long,
+                  color: Theme.of(context).colorScheme.primary),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(sub.name,
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text('Next due: ${AppFormatters.formatDate(sub.nextDueDate)}',
+                      style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+            Text(AppFormatters.formatCurrency(sub.amount, currency),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
     );
   }
 }

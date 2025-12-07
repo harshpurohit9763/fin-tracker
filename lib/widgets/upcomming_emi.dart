@@ -6,7 +6,6 @@ import 'package:personal_finance/controllers/shared_preferences_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:personal_finance/models/emi_model.dart';
 
-
 class UpcomingEmiPanel extends ConsumerWidget {
   const UpcomingEmiPanel({super.key});
 
@@ -18,20 +17,8 @@ class UpcomingEmiPanel extends ConsumerWidget {
     return upcomingEmisAsync.when(
       data: (emis) {
         if (emis.isEmpty) {
-          return Container(
+          return _SoftCard(
             padding: const EdgeInsets.all(20.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
             child: Center(
                 child: Text(
               'No upcoming EMIs. You\'re all set!',
@@ -41,19 +28,7 @@ class UpcomingEmiPanel extends ConsumerWidget {
             )),
           );
         }
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
+        return _SoftCard(
           child: Column(
             children: List.generate(emis.length, (index) {
               final emi = emis[index];
@@ -67,20 +42,8 @@ class UpcomingEmiPanel extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Container(
+      error: (err, stack) => _SoftCard(
         padding: const EdgeInsets.all(20.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
         child: Center(
             child: Text(
           'Error loading EMIs: $err',
@@ -89,6 +52,49 @@ class UpcomingEmiPanel extends ConsumerWidget {
               ),
         )),
       ),
+    );
+  }
+}
+
+/// A reusable neomorphic card.
+class _SoftCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  const _SoftCard({required this.child, this.padding, this.margin});
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    final lightShadow = isDarkMode
+        ? Colors.white.withOpacity(0.05)
+        : Color.lerp(backgroundColor, Colors.white, 0.7)!;
+    final darkShadow = isDarkMode
+        ? Colors.black.withOpacity(0.4)
+        : Color.lerp(backgroundColor, Colors.black, 0.1)!;
+
+    return Container(
+      padding: padding,
+      margin: margin,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(24.0),
+        boxShadow: [
+          BoxShadow(
+            color: darkShadow,
+            offset: const Offset(4, 4),
+            blurRadius: 15,
+          ),
+          BoxShadow(
+            color: lightShadow,
+            offset: const Offset(-4, -4),
+            blurRadius: 15,
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }

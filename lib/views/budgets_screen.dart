@@ -88,45 +88,49 @@ class _OverallBudgetCard extends StatelessWidget {
     final remaining = total - spent;
     final percentage = total > 0 ? spent / total : 0.0;
 
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Total Monthly Budget',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: percentage,
-                minHeight: 20,
-                backgroundColor: Colors.grey.shade700,
+    return _SoftCard(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Total Monthly Budget',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          _NeomorphicProgressIndicator(
+            percentage: percentage,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Spent', style: Theme.of(context).textTheme.bodySmall),
+                  Text(AppFormatters.formatCurrency(spent, currency),
+                      style: Theme.of(context).textTheme.titleMedium),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                      'Spent: ${AppFormatters.formatCurrency(spent, currency)}/${AppFormatters.formatCurrency(total, currency)}'),
-                ),
-                Expanded(
-                  child: Text(
-                    'Remaining: ${AppFormatters.formatCurrency(remaining, currency)}',
-                    textAlign: TextAlign.end,
-                    style: TextStyle(
-                        color: remaining > 0 ? Colors.green : Colors.red,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('Remaining',
+                      style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    AppFormatters.formatCurrency(remaining, currency),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: remaining >= 0 ? Colors.green : Colors.red,
                         fontWeight: FontWeight.bold),
                   ),
-                ),
-              ],
-            ),
-          ],
-        ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -136,7 +140,7 @@ class _OverallBudgetCard extends StatelessWidget {
 class _CategoryBudgetCard extends StatelessWidget {
   final Budget budget;
 
-  const _CategoryBudgetCard({super.key, required this.budget});
+  const _CategoryBudgetCard({required this.budget});
 
   Color _getProgressColor(double percentage) {
     if (percentage > 1.0) return Colors.red.shade700;
@@ -153,37 +157,31 @@ class _CategoryBudgetCard extends StatelessWidget {
       return spentAsync.when(
         data: (spent) {
           final total = budget.amount;
-          final percentage = total > 0 ? spent / total : 0.0;
-          return Card(
+          final percentage = total > 0 ? (spent / total).clamp(0.0, 1.0) : 0.0;
+          return _SoftCard(
             margin: const EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(budget.categoryName,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                          '${AppFormatters.formatCurrency(spent, currency)} / ${AppFormatters.formatCurrency(total, currency)}'),
-                      Text('${(percentage * 100).toStringAsFixed(0)}%'),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: percentage,
-                      minHeight: 10,
-                      backgroundColor: Colors.grey.shade700,
-                      color: _getProgressColor(percentage),
-                    ),
-                  ),
-                ],
-              ),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(budget.categoryName,
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                        '${AppFormatters.formatCurrency(spent, currency)} / ${AppFormatters.formatCurrency(total, currency)}'),
+                    Text('${(percentage * 100).toStringAsFixed(0)}%'),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _NeomorphicProgressIndicator(
+                  percentage: percentage,
+                  color: _getProgressColor(percentage),
+                  height: 10,
+                ),
+              ],
             ),
           );
         },
@@ -194,5 +192,107 @@ class _CategoryBudgetCard extends StatelessWidget {
         error: (e, s) => Text('Error: $e'),
       );
     });
+  }
+}
+
+class _NeomorphicProgressIndicator extends StatelessWidget {
+  final double percentage;
+  final Color color;
+  final double height;
+
+  const _NeomorphicProgressIndicator({
+    required this.percentage,
+    required this.color,
+    this.height = 16.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    final lightShadow = isDarkMode
+        ? Colors.white.withOpacity(0.1)
+        : Color.lerp(backgroundColor, Colors.black, 0.1)!;
+    final darkShadow = isDarkMode
+        ? Colors.black.withOpacity(0.5)
+        : Color.lerp(backgroundColor, Colors.white, 0.9)!;
+
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(height / 2),
+        boxShadow: [
+          // Inset shadow
+          BoxShadow(
+            color: lightShadow,
+            offset: const Offset(-2, -2),
+            blurRadius: 4,
+          ),
+          BoxShadow(
+            color: darkShadow,
+            offset: const Offset(2, 2),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(height / 2),
+        child: FractionallySizedBox(
+          widthFactor: percentage,
+          alignment: Alignment.centerLeft,
+          child: Container(
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(height / 2),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A reusable neomorphic card.
+class _SoftCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
+  const _SoftCard({required this.child, this.padding, this.margin});
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    final lightShadow = isDarkMode
+        ? Colors.white.withOpacity(0.05)
+        : Color.lerp(backgroundColor, Colors.white, 0.7)!;
+    final darkShadow = isDarkMode
+        ? Colors.black.withOpacity(0.4)
+        : Color.lerp(backgroundColor, Colors.black, 0.1)!;
+
+    return Container(
+      padding: padding,
+      margin: margin,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(24.0),
+        boxShadow: [
+          BoxShadow(
+            color: darkShadow,
+            offset: const Offset(4, 4),
+            blurRadius: 15,
+          ),
+          BoxShadow(
+            color: lightShadow,
+            offset: const Offset(-4, -4),
+            blurRadius: 15,
+          ),
+        ],
+      ),
+      child: child,
+    );
   }
 }

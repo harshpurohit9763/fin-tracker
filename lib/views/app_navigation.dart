@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/views/emi_list_sccreen.dart';
@@ -5,6 +6,7 @@ import 'package:personal_finance/views/expense_list.dart';
 import 'package:personal_finance/views/manage_assets_screen.dart';
 import 'package:personal_finance/views/income_screen.dart'; // Import IncomeScreen
 import 'package:personal_finance/controllers/shared_preferences_provider.dart';
+import 'package:personal_finance/widgets/glass_container.dart';
 
 import 'dashboard_screen.dart';
 
@@ -17,14 +19,6 @@ class MainNavigation extends ConsumerStatefulWidget {
 
 class _MainNavigationState extends ConsumerState<MainNavigation> {
   int _selectedIndex = 0;
-
-  static const List<Widget> _widgetOptions = <Widget>[
-    DashboardScreen(),
-    ExpenseListScreen(),
-    EmiListScreen(),
-    ManageAssetsScreen(),
-    IncomeScreen(), // Added IncomeScreen
-  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -76,59 +70,55 @@ class _MainNavigationState extends ConsumerState<MainNavigation> {
 
     return Scaffold(
       body: Center(child: navItems[_selectedIndex].screen),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.only(bottom: 24.0, left: 16.0, right: 16.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-            border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: navItems.map((item) {
-              final isSelected = item.id == _selectedIndex;
-              return GestureDetector(
-                onTap: () => _onItemTapped(item.id),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected ? accentColor : Colors.transparent,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isSelected ? item.selectedIcon : item.icon,
-                        color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
-                        size: 24,
-                      ),
+      extendBody: true, // Allows body to go behind the floating nav bar
+      bottomNavigationBar: GlassContainer(
+        margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        blur: 20,
+        color: Theme.of(context).colorScheme.surface,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: navItems.map((item) {
+            final isSelected = item.id == _selectedIndex;
+            return GestureDetector(
+              onTap: () => _onItemTapped(item.id),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? accentColor : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isSelected ? item.selectedIcon : item.icon,
+                      color: isSelected
+                          ? Colors.white
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                      size: 24,
+                    ),
+                    if (isSelected) ...[
                       const SizedBox(height: 4),
                       Text(
                         item.label,
                         style: TextStyle(
-                          color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: isSelected
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ],
-                  ),
+                    ]
+                  ],
                 ),
-              );
-            }).toList(),
-          ),
+              ),
+            );
+          }).toList(),
         ),
       ),
     );
