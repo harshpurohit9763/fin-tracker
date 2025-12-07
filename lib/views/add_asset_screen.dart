@@ -1,104 +1,88 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import 'package:personal_finance/helper/app_formater.dart';
-import 'package:personal_finance/models/income_model.dart';
+import 'package:personal_finance/models/asset_model.dart';
+import 'package:personal_finance/controllers/asset_provider.dart';
 import 'package:personal_finance/controllers/shared_preferences_provider.dart';
-import 'package:personal_finance/controllers/income_provider.dart';
 
-class AddIncomeScreen extends ConsumerStatefulWidget {
-  final Income? income; // To edit existing income
-  const AddIncomeScreen({super.key, this.income});
+class AddAssetScreen extends ConsumerStatefulWidget {
+  final Asset? asset; // To edit existing asset
+  const AddAssetScreen({super.key, this.asset});
 
   @override
-  ConsumerState<AddIncomeScreen> createState() => _AddIncomeScreenState();
+  ConsumerState<AddAssetScreen> createState() => _AddAssetScreenState();
 }
 
-class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
+class _AddAssetScreenState extends ConsumerState<AddAssetScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _amountController;
-  late TextEditingController _descriptionController;
-  late TextEditingController _sourceController;
-  DateTime _selectedDate = DateTime.now();
-  bool _isMonthly = false;
+  late TextEditingController _valueController;
+  late TextEditingController _nameController;
+  late TextEditingController _appreciationController;
+  String? _selectedIcon;
 
-  bool get _isEditing => widget.income != null;
+  bool get _isEditing => widget.asset != null;
+
+  final Map<String, IconData> _availableIcons = {
+    'account_balance': Icons.account_balance_rounded,
+    'home': Icons.home_rounded,
+    'directions_car': Icons.directions_car_rounded,
+    'savings': Icons.savings_rounded,
+    'store': Icons.store_rounded,
+    'business': Icons.business_rounded,
+    'wallet': Icons.account_balance_wallet_rounded,
+    'crypto': Icons.currency_bitcoin_rounded,
+  };
 
   @override
   void initState() {
     super.initState();
-    _amountController = TextEditingController(
-      text: widget.income?.amount.toString(),
+    _valueController = TextEditingController(
+      text: widget.asset?.value.toString(),
     );
-    _descriptionController = TextEditingController(
-      text: widget.income?.description,
+    _nameController = TextEditingController(
+      text: widget.asset?.name,
     );
-    _sourceController = TextEditingController(
-      text: widget.income?.source,
+    _appreciationController = TextEditingController(
+      text: widget.asset?.yearlyAppreciation?.toString(),
     );
     if (_isEditing) {
-      _selectedDate = widget.income!.date;
-      _isMonthly = widget.income!.isMonthly;
+      _selectedIcon = widget.asset!.icon;
+    } else {
+      _selectedIcon = 'account_balance'; // Default icon
     }
   }
 
   @override
   void dispose() {
-    _amountController.dispose();
-    _descriptionController.dispose();
-    _sourceController.dispose();
+    _valueController.dispose();
+    _nameController.dispose();
+    _appreciationController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickDate() async {
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) {
-        // Customizing DatePicker to match app theme
-        return Theme(
-          data: Theme.of(context).copyWith(
-              colorScheme: Theme.of(context).colorScheme.copyWith(
-                    onPrimary: Colors.white, // Text color on the primary color
-                  )),
-          child: child!,
-        );
-      },
-    );
-    if (pickedDate != null && pickedDate != _selectedDate) {
-      setState(() {
-        _selectedDate = pickedDate;
-      });
-    }
   }
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      final amount = double.parse(_amountController.text);
-      final description = _descriptionController.text;
-      final source = _sourceController.text;
-      final monthYear = AppFormatters.formatMonthYear(_selectedDate);
+      final value = double.parse(_valueController.text);
+      final name = _nameController.text;
+      final appreciation = _appreciationController.text.isNotEmpty
+          ? double.tryParse(_appreciationController.text)
+          : null;
 
-      final newIncome = Income(
-        id: widget.income?.id,
-        amount: amount,
-        description: description.isNotEmpty ? description : 'Income',
-        source: source.isNotEmpty ? source : 'Other',
-        date: _selectedDate,
-        monthYear: monthYear,
-        isMonthly: _isMonthly,
+      final newAsset = Asset(
+        id: widget.asset?.id,
+        name: name.isNotEmpty ? name : 'Unnamed Asset',
+        value: value,
+        yearlyAppreciation: appreciation,
+        icon: _selectedIcon,
       );
 
       if (_isEditing) {
-        await ref.read(incomeListProvider.notifier).updateIncome(newIncome);
+        await ref.read(assetListProvider.notifier).updateAsset(newAsset);
       } else {
-        await ref.read(incomeListProvider.notifier).addIncome(newIncome);
+        await ref.read(assetListProvider.notifier).addAsset(newAsset);
       }
 
-      ref.invalidate(incomeListProvider);
+      ref.invalidate(assetListProvider);
       if (mounted) Navigator.of(context).pop();
     }
   }
@@ -110,7 +94,6 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final currency = ref.watch(currencyProvider);
 
-    // Define common input decoration for consistency
     InputDecoration getModernInputDecoration(String label, IconData icon) {
       return InputDecoration(
         labelText: label,
@@ -140,7 +123,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
       backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
         title: Text(
-          _isEditing ? 'Edit Income' : 'New Income',
+          _isEditing ? 'Edit Asset' : 'New Asset',
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         centerTitle: true,
@@ -167,12 +150,12 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // --- 1. Hero Amount Field ---
+              // --- 1. Hero Value Field ---
               Center(
                 child: Column(
                   children: [
                     Text(
-                      'Enter Amount',
+                      'Enter Asset Value',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.hintColor,
                       ),
@@ -180,7 +163,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
                     const SizedBox(height: 10),
                     IntrinsicWidth(
                       child: TextFormField(
-                        controller: _amountController,
+                        controller: _valueController,
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
                         textAlign: TextAlign.center,
@@ -232,68 +215,26 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    // Source Field
                     TextFormField(
-                      controller: _sourceController,
+                      controller: _nameController,
                       decoration: getModernInputDecoration(
-                          'Source (e.g. Salary, Freelance)',
-                          Icons.wallet_rounded),
+                          'Asset Name (e.g. Savings Account)',
+                          Icons.label_rounded),
                       validator: (value) =>
-                          value!.isEmpty ? 'Please enter a source' : null,
+                          value!.isEmpty ? 'Please enter a name' : null,
                     ),
-
                     const SizedBox(height: 20),
-
-                    // Date Picker Tile
-                    InkWell(
-                      onTap: _pickDate,
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 16),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withOpacity(0.05)
-                              : Colors.grey.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.transparent),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.calendar_today_rounded,
-                                color: colorScheme.primary.withOpacity(0.7)),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Date Received',
-                                  style: theme.textTheme.labelSmall
-                                      ?.copyWith(color: theme.hintColor),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  DateFormat.yMMMd().format(_selectedDate),
-                                  style: theme.textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            const Icon(Icons.arrow_drop_down_rounded),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Description Field
                     TextFormField(
-                      controller: _descriptionController,
+                      controller: _appreciationController,
                       decoration: getModernInputDecoration(
-                          'Description (Optional)', Icons.notes_rounded),
-                      maxLines: 2,
+                          'Yearly Growth % (Optional)',
+                          Icons.trending_up_rounded),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d{0,2}')),
+                      ],
                     ),
                   ],
                 ),
@@ -301,40 +242,68 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
 
               const SizedBox(height: 24),
 
-              // --- 3. Settings (Switch) ---
+              // --- 3. Icon Selector ---
               Container(
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                    color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: _isMonthly
-                          ? colorScheme.primary.withOpacity(0.5)
-                          : Colors.transparent,
-                      width: 1.5,
-                    )),
-                child: SwitchListTile(
-                  title: const Text('Recurring Monthly'),
-                  subtitle: const Text('Is this a fixed monthly income?'),
-                  value: _isMonthly,
-                  activeColor: colorScheme.primary,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                  secondary: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _isMonthly
-                          ? colorScheme.primary.withOpacity(0.1)
-                          : theme.disabledColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Select Icon',
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
-                    child: Icon(
-                      Icons.repeat_rounded,
-                      color: _isMonthly
-                          ? colorScheme.primary
-                          : theme.disabledColor,
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Wrap(
+                        spacing: 16.0,
+                        runSpacing: 16.0,
+                        alignment: WrapAlignment.center,
+                        children: _availableIcons.entries.map((entry) {
+                          final isSelected = _selectedIcon == entry.key;
+                          return GestureDetector(
+                            onTap: () =>
+                                setState(() => _selectedIcon = entry.key),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? colorScheme.primary
+                                    : theme.scaffoldBackgroundColor,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.transparent
+                                      : theme.dividerColor,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                            color: colorScheme.primary
+                                                .withOpacity(0.4),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 4))
+                                      ]
+                                    : [],
+                              ),
+                              child: Icon(
+                                entry.value,
+                                color: isSelected
+                                    ? Colors.white
+                                    : theme.iconTheme.color,
+                                size: 24,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ),
-                  ),
-                  onChanged: (value) => setState(() => _isMonthly = value),
+                  ],
                 ),
               ),
 
@@ -377,7 +346,7 @@ class _AddIncomeScreenState extends ConsumerState<AddIncomeScreen> {
                               color: Colors.white),
                           const SizedBox(width: 12),
                           Text(
-                            _isEditing ? 'Update Income' : 'Save Income',
+                            _isEditing ? 'Update Asset' : 'Save Asset',
                             style: theme.textTheme.titleMedium?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,

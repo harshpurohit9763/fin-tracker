@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:personal_finance/db/db_helper.dart';
 import 'package:personal_finance/models/income_model.dart';
-import 'package:personal_finance/widgets/selected_month_year_provider.dart';
 // Assuming this provider exists
 
 // 1. IncomeRepository to handle database operations
@@ -117,31 +116,38 @@ final incomeListProvider =
 final filteredIncomeListProvider =
     Provider.autoDispose<AsyncValue<List<Income>>>((ref) {
   final incomesAsyncValue = ref.watch(incomeListProvider);
-  final selectedMonthYear = ref.watch(
-      selectedMonthYearProvider); // Provider of the currently viewed month as DateTime
+  final now = DateTime.now();
 
   return incomesAsyncValue.when(
     data: (incomes) {
       // Correctly compare years and months for filtering
       final oneTimeIncomes = incomes.where((income) {
         return !income.isMonthly &&
-            income.date.year == selectedMonthYear.year &&
-            income.date.month == selectedMonthYear.month;
+            income.date.year == now.year &&
+            income.date.month == now.month;
       }).toList();
 
-      final recurringIncomes = incomes.where((income) {
+      // Get all recurring income templates that are active for the selected month.
+      final activeRecurringIncomes = incomes.where((income) {
         if (!income.isMonthly) return false;
 
         // Create DateTime objects for comparison, ignoring the day
         final incomeMonth = DateTime(income.date.year, income.date.month);
-        final selectedMonth =
-            DateTime(selectedMonthYear.year, selectedMonthYear.month);
+        final selectedMonth = DateTime(now.year, now.month);
 
-        // A recurring income should appear if its start month is on or before the selected month
+        // A recurring income is active if its start month is on or before the selected month.
         return !incomeMonth.isAfter(selectedMonth);
       }).toList();
 
-      final filteredIncomes = [...oneTimeIncomes, ...recurringIncomes];
+      // From the active templates, only show those that haven't been marked as received for the current month.
+      final recurringIncomesToShow = activeRecurringIncomes.where((recurring) {
+        final hasBeenReceived = oneTimeIncomes.any((oneTime) =>
+            oneTime.source.trim() == recurring.source.trim() &&
+            oneTime.description.trim() == recurring.description.trim());
+        return !hasBeenReceived;
+      }).toList();
+
+      final filteredIncomes = [...oneTimeIncomes, ...recurringIncomesToShow];
       filteredIncomes.sort((a, b) => b.date.compareTo(a.date));
 
       return AsyncValue.data(filteredIncomes);

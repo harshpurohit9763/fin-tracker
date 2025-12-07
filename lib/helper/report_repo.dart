@@ -60,7 +60,7 @@ class ReportRepository {
     final List<Map<String, dynamic>> maps = await db.query(
       DatabaseHelper.incomeTable,
       where:
-          '${DatabaseHelper.colIncomeDate} >= ? AND ${DatabaseHelper.colIncomeDate} <= ?',
+          '${DatabaseHelper.colIncomeDate} >= ? AND ${DatabaseHelper.colIncomeDate} <= ? AND is_monthly = 0',
       whereArgs: [
         start.millisecondsSinceEpoch,
         endOfDay.millisecondsSinceEpoch
@@ -98,7 +98,7 @@ class ReportRepository {
     final List<Map<String, dynamic>> maps = await db.query(
       DatabaseHelper.incomeTable,
       where:
-          '${DatabaseHelper.colIncomeDate} >= ? AND ${DatabaseHelper.colIncomeDate} <= ?',
+          '${DatabaseHelper.colIncomeDate} >= ? AND ${DatabaseHelper.colIncomeDate} <= ? AND is_monthly = 0',
       whereArgs: [
         start.millisecondsSinceEpoch,
         endOfDay.millisecondsSinceEpoch
@@ -114,7 +114,7 @@ class ReportRepository {
     final db = await _dbHelper.database;
     final endOfDay = DateTime(end.year, end.month, end.day, 23, 59, 59);
     final result = await db.rawQuery(
-      'SELECT SUM(${DatabaseHelper.colIncomeAmount}) as total FROM ${DatabaseHelper.incomeTable} WHERE ${DatabaseHelper.colIncomeDate} >= ? AND ${DatabaseHelper.colIncomeDate} <= ?',
+      'SELECT SUM(${DatabaseHelper.colIncomeAmount}) as total FROM ${DatabaseHelper.incomeTable} WHERE ${DatabaseHelper.colIncomeDate} >= ? AND ${DatabaseHelper.colIncomeDate} <= ? AND is_monthly = 0',
       [start.millisecondsSinceEpoch, endOfDay.millisecondsSinceEpoch],
     );
 
