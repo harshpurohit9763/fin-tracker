@@ -5,8 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/helper/app_formater.dart';
 import 'package:personal_finance/controllers/shared_preferences_provider.dart';
 import 'package:personal_finance/controllers/insights_provider.dart';
-import 'package:personal_finance/widgets/cash_flow_chart.dart'; // Import the new cash flow chart
-
+import 'package:personal_finance/widgets/cash_flow_chart.dart';
 import 'manage_subscriptions_screen.dart';
 import '../controllers/subscription_provider.dart';
 
@@ -15,525 +14,460 @@ class InsightsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Background color slightly off-white for contrast against white cards
+    final bgColor = isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FE);
+
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 32), // Top spacing
-            Row(
-              children: [
-                CupertinoNavigationBarBackButton(
+      backgroundColor: bgColor,
+      body: CustomScrollView(
+        slivers: [
+          // --- Modern App Bar ---
+          SliverAppBar(
+            backgroundColor: bgColor,
+            expandedHeight: 80.0,
+            floating: true,
+            pinned: true,
+            elevation: 0,
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CircleAvatar(
+                backgroundColor: isDark ? Colors.white10 : Colors.white,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                  color: theme.iconTheme.color,
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-                Text(
-                  'Financial Insights',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                ),
-              ],
+              ),
             ),
+            centerTitle: true,
+            title: Text(
+              'Insights',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                fontSize: 20,
+              ),
+            ),
+          ),
 
-            const SizedBox(height: 32),
-            const _NeedsVsWantsCard(),
-            const SizedBox(height: 24),
-            const _SubscriptionTrackerCard(),
-            const SizedBox(height: 24),
-            const _CashFlowProjectionCard(),
-          ],
-        ),
+          // --- Content ---
+          const SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate.fixed([
+                _NeedsVsWantsSection(),
+                SizedBox(height: 32),
+                _SubscriptionTrackerSection(),
+                SizedBox(height: 32),
+                _CashFlowSection(),
+                SizedBox(height: 40),
+              ]),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Card for visualizing Needs vs. Wants vs. Savings.
-class _NeedsVsWantsCard extends ConsumerWidget {
-  const _NeedsVsWantsCard();
+// --- 1. Needs vs Wants Section (Donut Chart) ---
+class _NeedsVsWantsSection extends ConsumerWidget {
+  const _NeedsVsWantsSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final breakdownAsync = ref.watch(spendingBreakdownProvider);
     final currency = ref.watch(currencyProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return breakdownAsync.when(
       data: (data) {
-        if (data.total == 0) {
-          return Container(
-            padding: const EdgeInsets.all(20.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                  color:
-                      Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
+        if (data.total == 0) return const SizedBox(); // Or empty state
+
+        return Column(
+          children: [
+            // Header Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Where your money goes",
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold)),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text("This Month",
+                      style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12)),
+                )
               ],
             ),
-            child: SizedBox(
-              height: 150,
-              child: Center(
-                  child: Text(
-                'No spending data for this period.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+            const SizedBox(height: 24),
+
+            // Chart Container
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    )
+                  ]),
+              child: Column(
+                children: [
+                  // The Donut Chart
+                  SizedBox(
+                    height: 200,
+                    child: Stack(
+                      children: [
+                        PieChart(
+                          PieChartData(
+                            sectionsSpace: 4, // Spacing between sections
+                            centerSpaceRadius: 60, // Large hole for Donut
+                            sections: [
+                              _buildSection(data.needs, const Color(0xFF6C63FF),
+                                  data.total), // Purple
+                              _buildSection(data.wants, const Color(0xFFFF6584),
+                                  data.total), // Pink
+                              _buildSection(data.investments,
+                                  const Color(0xFF4DB6AC), data.total), // Teal
+                            ],
+                          ),
+                        ),
+                        // Center Text
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text("Total",
+                                  style: TextStyle(
+                                      color: theme.hintColor, fontSize: 12)),
+                              Text(
+                                AppFormatters.formatCurrency(
+                                    data.total, currency),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w900, fontSize: 18),
+                              ),
+                            ],
+                          ),
+                        )
+                      ],
                     ),
-              )),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Custom Legend
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _LegendPill(
+                          color: const Color(0xFF6C63FF),
+                          label: "Needs",
+                          amount: data.needs,
+                          currency: currency),
+                      _LegendPill(
+                          color: const Color(0xFFFF6584),
+                          label: "Wants",
+                          amount: data.wants,
+                          currency: currency),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _LegendPill(
+                      color: const Color(0xFF4DB6AC),
+                      label: "Savings",
+                      amount: data.investments,
+                      currency: currency),
+                ],
+              ),
             ),
-          );
-        }
-        return Container(
-          padding: const EdgeInsets.all(20.0),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Spending Breakdown',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      )),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 150,
-                child: _buildPieChart(data, context),
-              ),
-              const SizedBox(height: 16),
-              _BreakdownRow(
-                  title: 'Needs',
-                  amount: AppFormatters.formatCurrency(data.needs, currency),
-                  percentage:
-                      '${(data.needs / data.total * 100).toStringAsFixed(1)}%',
-                  color: Theme.of(context).colorScheme.primary),
-              _BreakdownRow(
-                  title: 'Wants',
-                  amount: AppFormatters.formatCurrency(data.wants, currency),
-                  percentage:
-                      '${(data.wants / data.total * 100).toStringAsFixed(1)}%',
-                  color: Theme.of(context).colorScheme.secondary),
-              _BreakdownRow(
-                  title: 'Investments',
-                  amount:
-                      AppFormatters.formatCurrency(data.investments, currency),
-                  percentage:
-                      '${(data.investments / data.total * 100).toStringAsFixed(1)}%',
-                  color: Theme.of(context).colorScheme.tertiary),
-            ],
-          ),
+          ],
         );
       },
-      loading: () => Container(
-        height: 200,
-        padding: const EdgeInsets.all(20.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: const Center(child: CircularProgressIndicator()),
-      ),
-      error: (e, s) => Container(
-        height: 200,
-        padding: const EdgeInsets.all(20.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Center(
-            child: Text(
-          'Error: $e',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
-        )),
-      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const SizedBox(),
     );
   }
 
-  Widget _buildPieChart(SpendingBreakdown data, BuildContext context) {
-    final theme = Theme.of(context);
-    return PieChart(
-      PieChartData(
-        sections: [
-          PieChartSectionData(
-            value: data.needs,
-            title: '${(data.needs / data.total * 100).toStringAsFixed(0)}%',
-            color: theme.colorScheme.primary, // Using primary accent color
-            radius: 60, // Adjusted radius
-            titleStyle: theme.textTheme.bodySmall
-                ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-          PieChartSectionData(
-            value: data.wants,
-            title: '${(data.wants / data.total * 100).toStringAsFixed(0)}%',
-            color: theme.colorScheme.secondary, // Using secondary accent color
-            radius: 60, // Adjusted radius
-            titleStyle: theme.textTheme.bodySmall
-                ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-          PieChartSectionData(
-            value: data.investments,
-            title:
-                '${(data.investments / data.total * 100).toStringAsFixed(0)}%',
-            color: theme.colorScheme.tertiary, // Using tertiary accent color
-            radius: 60, // Adjusted radius
-            titleStyle: theme.textTheme.bodySmall
-                ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-        ],
-        centerSpaceRadius: 40,
-        sectionsSpace: 3, // Adjusted sections space
-      ),
+  PieChartSectionData _buildSection(double value, Color color, double total) {
+    final isLarge = value / total > 0.5;
+    return PieChartSectionData(
+      color: color,
+      value: value,
+      title: '', // Hide title on chart
+      radius: isLarge ? 25 : 20, // Make larger section pop slightly
+      showTitle: false,
+      badgeWidget: null,
     );
   }
 }
 
-class _BreakdownRow extends StatelessWidget {
-  final String title;
-  final String amount;
-  final String percentage;
+class _LegendPill extends StatelessWidget {
   final Color color;
+  final String label;
+  final double amount;
+  final String currency;
 
-  const _BreakdownRow(
-      {required this.title,
+  const _LegendPill(
+      {required this.color,
+      required this.label,
       required this.amount,
-      required this.percentage,
-      required this.color});
+      required this.currency});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: color,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      )),
-            ],
-          ),
-          Text(percentage,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  )),
-        ],
-      ),
+    return Column(
+      children: [
+        Row(
+          children: [
+            Container(
+                width: 8,
+                height: 8,
+                decoration:
+                    BoxDecoration(color: color, shape: BoxShape.circle)),
+            const SizedBox(width: 6),
+            Text(label,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                    color: Colors.grey)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(AppFormatters.formatCurrency(amount, currency),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+      ],
     );
   }
 }
 
-/// Card for tracking recurring bills and subscriptions.
-class _SubscriptionTrackerCard extends ConsumerWidget {
-  const _SubscriptionTrackerCard();
+// --- 2. Subscriptions Section (Horizontal Cards) ---
+class _SubscriptionTrackerSection extends ConsumerWidget {
+  const _SubscriptionTrackerSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final subscriptionsAsync = ref.watch(subscriptionListProvider);
     final currency = ref.watch(currencyProvider);
+    final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: subscriptionsAsync.when(
-        data: (subs) {
-          final totalMonthlyCost =
-              subs.fold<double>(0.0, (sum, item) => sum + item.amount);
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Recurring Bills',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
-                          )),
-                  TextButton(
-                    onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) =>
-                                const ManageSubscriptionsScreen())),
-                    style: TextButton.styleFrom(
-                      foregroundColor:
-                          Theme.of(context).colorScheme.primary, // Accent color
-                      textStyle: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    child: const Text('Manage'),
-                  )
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                  'Total Monthly Cost: ${AppFormatters.formatCurrency(totalMonthlyCost, currency)}',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      )),
-              const SizedBox(height: 16),
-              if (subs.isEmpty)
-                Text('No subscriptions added.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ))
-              else
-                ...subs.map((sub) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer
-                                  .withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(Icons.receipt_long,
-                                color: Theme.of(context).colorScheme.primary),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  sub.name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface,
-                                      ),
-                                ),
-                                Text(
-                                  'Next due: ${AppFormatters.formatDate(sub.nextDueDate)}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            AppFormatters.formatCurrency(sub.amount, currency),
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface,
-                                ),
-                          ),
-                        ],
-                      ),
-                    )),
-            ],
-          );
-        },
-        loading: () => Container(
-          height: 200,
-          child: const Center(child: CircularProgressIndicator()),
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("Recurring Bills",
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            GestureDetector(
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ManageSubscriptionsScreen())),
+              child: Text("See All",
+                  style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold)),
+            )
+          ],
         ),
-        error: (e, s) => Container(
-          height: 200,
-          child: Center(
-              child: Text(
-            'Error: $e',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
+        const SizedBox(height: 16),
+        subscriptionsAsync.when(
+          data: (subs) {
+            if (subs.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-          )),
-        ),
-      ),
+                child: const Text("No active subscriptions",
+                    textAlign: TextAlign.center),
+              );
+            }
+
+            // Horizontal ScrollView for Cards
+            return SizedBox(
+              height: 140, // Height of the card
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: subs.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  final sub = subs[index];
+                  // Alternating Colors for visual interest
+                  final isEven = index % 2 == 0;
+                  final cardColor =
+                      isEven ? const Color(0xFF2D2D2D) : Colors.white;
+                  final textColor = isEven ? Colors.white : Colors.black;
+
+                  return Container(
+                    width: 130,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5))
+                        ]),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Icon
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isEven ? Colors.white24 : Colors.grey[100],
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.receipt,
+                              color: isEven ? Colors.white : Colors.black,
+                              size: 18),
+                        ),
+                        // Info
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              sub.name,
+                              style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              AppFormatters.formatCurrency(
+                                  sub.amount, currency),
+                              style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+          loading: () => const SizedBox(),
+          error: (_, __) => const SizedBox(),
+        )
+      ],
     );
   }
 }
 
-/// Card for projecting cash flow.
-class _CashFlowProjectionCard extends ConsumerWidget {
-  const _CashFlowProjectionCard();
+// --- 3. Cash Flow Section (Clean Line Chart) ---
+class _CashFlowSection extends ConsumerWidget {
+  const _CashFlowSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cashFlowAsync = ref.watch(cashFlowDataProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Cash Flow',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  )),
-          const SizedBox(height: 16),
-          cashFlowAsync.when(
-            data: (data) {
-              if (data.isEmpty) {
-                return SizedBox(
-                  height: 150,
-                  child: Center(
-                      child: Text(
-                          'Not enough data to display cash flow chart (min 2 months).',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ))),
-                );
-              }
-              return CashFlowChart(cashFlowData: data);
-            },
-            loading: () => const SizedBox(
-              height: 150,
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (e, s) => SizedBox(
-              height: 150,
-              child: Center(
-                  child: Text(
-                'Error loading cash flow data: $e',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-              )),
-            ),
-          ),
-          const SizedBox(height: 16),
-          // Legend for the chart
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Cash Flow Trends",
+            style: theme.textTheme.titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                )
+              ]),
+          child: Column(
             children: [
-              _ChartLegendItem(
-                  color: Theme.of(context).colorScheme.primary, text: 'Income'),
-              const SizedBox(width: 16),
-              _ChartLegendItem(
-                  color: Theme.of(context).colorScheme.error, text: 'Expenses'),
-              const SizedBox(width: 16),
-              _ChartLegendItem(
-                  color: Theme.of(context).colorScheme.secondary,
-                  text: 'Net Flow'),
+              cashFlowAsync.when(
+                data: (data) {
+                  if (data.isEmpty) {
+                    return const SizedBox(
+                      height: 150,
+                      child: Center(child: Text("Not enough data")),
+                    );
+                  }
+                  return SizedBox(
+                    height: 200,
+                    // Pass specific styling to your chart widget if it supports it
+                    // Or ensure CashFlowChart uses Theme colors
+                    child: CashFlowChart(cashFlowData: data),
+                  );
+                },
+                loading: () => const SizedBox(
+                    height: 150,
+                    child: Center(child: CircularProgressIndicator())),
+                error: (_, __) => const SizedBox(height: 150),
+              ),
+              const SizedBox(height: 16),
+              // Clean Legend
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _SimpleLegend(color: Colors.green, label: "In"),
+                  const SizedBox(width: 16),
+                  _SimpleLegend(color: Colors.redAccent, label: "Out"),
+                ],
+              )
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _ChartLegendItem extends StatelessWidget {
+class _SimpleLegend extends StatelessWidget {
   final Color color;
-  final String text;
-
-  const _ChartLegendItem({required this.color, required this.text});
+  final String label;
+  const _SimpleLegend({required this.color, required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: 8,
+          height: 8,
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color,
-          ),
+              color: color, borderRadius: BorderRadius.circular(2)),
         ),
-        const SizedBox(width: 4),
-        Text(text,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                )),
+        const SizedBox(width: 6),
+        Text(label,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
       ],
     );
   }

@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:ui'; // For image filters if needed
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:personal_finance/controllers/shared_preferences_provider.dart';
 import 'package:personal_finance/helper/app_formater.dart';
 import 'package:personal_finance/helper/tflite_helper.dart';
 import 'package:personal_finance/models/category_model.dart';
@@ -35,7 +37,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   void initState() {
     super.initState();
     _amountController = TextEditingController(
-      text: widget.expense?.amount.toString(),
+      text: widget.expense?.amount.toString() ?? '',
     );
     _descriptionController = TextEditingController(
       text: widget.expense?.description,
@@ -43,7 +45,7 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     _tfliteHelper = TFLiteHelper();
     if (_isEditing) {
       _selectedDate = widget.expense!.date;
-      // Note: _selectedCategory will be set when the category list loads
+      // Note: _selectedCategory will be set when the category list loads in build
     }
   }
 
@@ -61,6 +63,18 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime(2000),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary,
+              onPrimary: Colors.white,
+              onSurface: Theme.of(context).textTheme.bodyLarge!.color!,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (pickedDate != null && pickedDate != _selectedDate) {
       setState(() {
@@ -70,20 +84,35 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
   }
 
   Future<void> _pickAndProcessImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      final bytes = await image.readAsBytes();
-      final recognizedText = await _tfliteHelper?.predict(bytes);
-      if (recognizedText != null) {
-        // Simple parsing logic, assuming amount is a number in the text
-        final RegExp amountRegex = RegExp(r'(\d+\.\d{2})');
-        final match = amountRegex.firstMatch(recognizedText);
-        if (match != null) {
-          _amountController.text = match.group(1)!;
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        // Show loading feedback if desired
+        final bytes = await image.readAsBytes();
+        final recognizedText = await _tfliteHelper?.predict(bytes);
+        if (recognizedText != null) {
+          // Simple parsing logic
+          final RegExp amountRegex = RegExp(r'(\d+\.\d{2})');
+          final match = amountRegex.firstMatch(recognizedText);
+          if (match != null) {
+            _amountController.text = match.group(1)!;
+          }
+          setState(() {
+            _descriptionController.text = recognizedText;
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Receipt scanned successfully!')),
+            );
+          }
         }
-        setState(() {
-          _descriptionController.text = recognizedText;
-        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error scanning receipt: $e')),
+        );
       }
     }
   }
@@ -92,7 +121,11 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
     if (_formKey.currentState!.validate()) {
       if (_selectedCategory == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a category')),
+          SnackBar(
+            content: const Text('Please select a category'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         return;
       }
@@ -102,20 +135,17 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
       final monthYear = AppFormatters.formatMonthYear(_selectedDate);
 
       if (_isEditing) {
-        // Preserve EMI-specific data when updating
         final updatedExpense = widget.expense!.copyWith(
           amount: amount,
           category: _selectedCategory!.name,
           date: _selectedDate,
           monthYear: monthYear,
           description: description.isNotEmpty ? description : null,
-          // Note: scheduledAmount and transactionType are preserved by copyWith
         );
         await ref
             .read(expenseListProvider.notifier)
             .updateExpense(updatedExpense);
       } else {
-        // This is for creating a new expense
         final newExpense = Expense(
           amount: amount,
           category: _selectedCategory!.name,
@@ -126,161 +156,359 @@ class _AddExpenseScreenState extends ConsumerState<AddExpenseScreen> {
         await ref.read(expenseListProvider.notifier).addExpense(newExpense);
       }
 
-      ref.invalidate(expenseListProvider);
       ref.invalidate(currentMonthSpendingProvider);
 
-      Navigator.of(context).pop();
+      if (mounted) Navigator.of(context).pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final categoriesAsyncValue = ref.watch(categoryListProvider);
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isAmoled = ref.watch(isAmoledProvider); // Watch isAmoledProvider
+    final isDark = theme.brightness == Brightness.dark;
+    final currency = ref.watch(currencyProvider);
+    // Check if this is an EMI expense to disable certain fields
     final bool isEmiExpense =
         _isEditing && widget.expense?.transactionType == 'EMI';
 
+    // Helper for input decoration
+    InputDecoration getModernInputDecoration(String label, IconData icon) {
+      return InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: colorScheme.primary.withOpacity(0.7)),
+        filled: true,
+        fillColor: isDark
+            ? Colors.white.withOpacity(0.05)
+            : Colors.grey.withOpacity(0.05),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      );
+    }
+
     return Scaffold(
+      backgroundColor: isAmoled
+          ? Colors.black
+          : (isDark ? const Color(0xFF121212) : const Color(0xFFFAFAFA)),
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Expense' : 'Add Expense'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.camera_alt),
-            onPressed: _pickAndProcessImage,
-            tooltip: 'Extract from bill',
+        title: Text(
+          _isEditing ? 'Edit Expense' : 'New Expense',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.grey.withOpacity(0.1),
+            ),
+            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           ),
-        ],
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Amount
-              TextFormField(
-                controller: _amountController,
-                decoration: InputDecoration(
-                  labelText: isEmiExpense ? 'Amount Paid' : 'Amount',
-                  prefixIcon: const Icon(Icons.attach_money),
-                  border: const OutlineInputBorder(),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-                ],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter an amount';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+              // --- 1. Hero Amount & Scanner ---
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      isEmiExpense ? 'EMI Amount' : 'Amount Spent',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.hintColor,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    IntrinsicWidth(
+                      child: TextFormField(
+                        controller: _amountController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.displayMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color:
+                              colorScheme.error, // Red/Error color for expenses
+                        ),
+                        decoration: InputDecoration(
+                          prefixText:
+                              '$currency ', // Dynamic currency symbol ideally
+                          prefixStyle: theme.textTheme.headlineMedium?.copyWith(
+                            color: colorScheme.error.withOpacity(0.7),
+                          ),
+                          border: InputBorder.none,
+                          hintText: '0.00',
+                          hintStyle: theme.textTheme.displayMedium?.copyWith(
+                            color: theme.disabledColor.withOpacity(0.3),
+                          ),
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d*\.?\d{0,2}')),
+                        ],
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Required';
+                          if (double.tryParse(value) == null) return 'Invalid';
+                          return null;
+                        },
+                      ),
+                    ),
 
-              // Scheduled Amount (only for EMI)
-              if (isEmiExpense) ...[
-                TextFormField(
-                  initialValue:
-                      widget.expense?.scheduledAmount?.toString() ?? '0.0',
-                  readOnly: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Scheduled Amount',
-                    prefixIcon: Icon(Icons.schedule),
-                    border: OutlineInputBorder(),
-                    filled: true,
+                    const SizedBox(height: 16),
+
+                    // Scan Receipt Pill Button
+                    InkWell(
+                      onTap: _pickAndProcessImage,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: colorScheme.primary.withOpacity(0.2)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.mic,
+                                size: 18, color: colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Record Receipt",
+                              style: TextStyle(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // --- 2. Details Card ---
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    // Category Dropdown
+                    categoriesAsyncValue.when(
+                      data: (categories) {
+                        // Logic to pre-select category on edit
+                        if (_isEditing && _selectedCategory == null) {
+                          try {
+                            _selectedCategory = categories.firstWhere(
+                              (c) => c.name == widget.expense!.category,
+                            );
+                          } catch (e) {
+                            _selectedCategory =
+                                categories.isNotEmpty ? categories.first : null;
+                          }
+                        }
+
+                        return DropdownButtonFormField<Category>(
+                          value: _selectedCategory,
+                          decoration: getModernInputDecoration(
+                              'Category', Icons.category_rounded),
+                          icon: const Icon(Icons.arrow_drop_down_rounded),
+                          borderRadius: BorderRadius.circular(16),
+                          dropdownColor:
+                              isDark ? const Color(0xFF2C2C2C) : Colors.white,
+                          items: categories.map((Category category) {
+                            return DropdownMenuItem<Category>(
+                              value: category,
+                              child: Row(
+                                children: [
+                                  // Optional: Add circle color if category has color
+                                  Text(category.name),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: isEmiExpense
+                              ? null // Disable category change for EMI
+                              : (Category? newValue) {
+                                  setState(() {
+                                    _selectedCategory = newValue;
+                                  });
+                                },
+                          validator: (value) =>
+                              value == null ? 'Please select a category' : null,
+                        );
+                      },
+                      loading: () => const LinearProgressIndicator(),
+                      error: (err, stack) => Text('Error: $err',
+                          style: const TextStyle(color: Colors.red)),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Date Picker
+                    InkWell(
+                      onTap: _pickDate,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.05)
+                              : Colors.grey.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.calendar_today_rounded,
+                                color: colorScheme.primary.withOpacity(0.7)),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Date',
+                                  style: theme.textTheme.labelSmall
+                                      ?.copyWith(color: theme.hintColor),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  DateFormat.yMMMd().format(_selectedDate),
+                                  style: theme.textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            const Icon(Icons.arrow_drop_down_rounded),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Description
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: getModernInputDecoration(
+                          'Description (Optional)', Icons.notes_rounded),
+                      maxLines: 2,
+                    ),
+
+                    // EMI Specific Field (Read Only)
+                    if (isEmiExpense) ...[
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        initialValue:
+                            widget.expense?.scheduledAmount?.toString() ??
+                                '0.0',
+                        readOnly: true,
+                        decoration: getModernInputDecoration(
+                                'Scheduled EMI Amount', Icons.schedule_rounded)
+                            .copyWith(
+                          fillColor: theme.disabledColor.withOpacity(0.1),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // --- 3. Submit Button ---
+              Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28),
+                  gradient: LinearGradient(
+                    colors: [
+                      colorScheme.primary,
+                      colorScheme.primary.withOpacity(0.8),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _submitForm,
+                    borderRadius: BorderRadius.circular(28),
+                    child: Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                              _isEditing
+                                  ? Icons.check_circle_outline
+                                  : Icons.add_circle_outline,
+                              color: Colors.white),
+                          const SizedBox(width: 12),
+                          Text(
+                            _isEditing ? 'Update Expense' : 'Save Expense',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
-              ],
-
-              // Category
-              categoriesAsyncValue.when(
-                data: (categories) {
-                  // If editing, find the category object that matches the name
-                  if (_isEditing && _selectedCategory == null) {
-                    _selectedCategory = categories.firstWhere(
-                      (c) => c.name == widget.expense!.category,
-                      orElse: () => categories.first,
-                    );
-                  }
-
-                  return DropdownButtonFormField<Category>(
-                    value: _selectedCategory,
-                    decoration: const InputDecoration(
-                      labelText: 'Category',
-                      prefixIcon: Icon(Icons.category),
-                      border: OutlineInputBorder(),
-                    ),
-                    items: categories.map((Category category) {
-                      return DropdownMenuItem<Category>(
-                        value: category,
-                        child: Text(category.name),
-                      );
-                    }).toList(),
-                    // Disable category change for EMI expenses
-                    onChanged: isEmiExpense
-                        ? null
-                        : (Category? newValue) {
-                            setState(() {
-                              _selectedCategory = newValue;
-                            });
-                          },
-                    validator: (value) =>
-                        value == null ? 'Please select a category' : null,
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Text('Error loading categories: $err'),
               ),
-              const SizedBox(height: 16),
 
-              // Date
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Date: ${DateFormat.yMMMd().format(_selectedDate)}',
-                      style: textTheme.titleMedium,
-                    ),
-                  ),
-                  TextButton(onPressed: _pickDate, child: const Text('Change')),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Description
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description (Optional)',
-                  prefixIcon: Icon(Icons.description),
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 24),
-
-              // Submit Button
-              ElevatedButton.icon(
-                onPressed: _submitForm,
-                icon: const Icon(Icons.save),
-                label: Text(_isEditing ? 'Update' : 'Save'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  textStyle: textTheme.titleMedium,
-                  backgroundColor: colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                ),
-              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),

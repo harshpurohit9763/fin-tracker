@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_finance/controllers/asset_provider.dart';
 import 'package:personal_finance/controllers/emi_provider.dart';
@@ -20,12 +21,36 @@ final totalLiabilitiesProvider =
   // Watch the provider to get its AsyncValue, then handle the states.
   final emisAsync = ref.watch(emiListProvider);
   return emisAsync.when(
-    data: (emis) => emis
-        .where((emi) => emi.tenureRemainingMonths > 0)
-        .fold<double>(
-            0.0,
-            (sum, emi) =>
-                sum + (emi.monthlyEmiAmount * emi.tenureRemainingMonths)),
+    data: (emis) {
+      double total = 0.0;
+      for (var emi in emis.where((e) => e.tenureRemainingMonths > 0)) {
+        if (emi.isCompoundInterest &&
+            emi.interestRate != null &&
+            emi.interestRate! > 0) {
+          // Calculate Present Value (outstanding principal) for compound interest loans
+          final monthlyRate = (emi.interestRate! / 100) / 12;
+          final remainingTenure = emi.tenureRemainingMonths;
+          final emiAmount = emi.monthlyEmiAmount;
+
+          // PV = PMT * [1 - (1 + r)^-n] / r
+          final pv = emiAmount *
+              (1 - pow(1 + monthlyRate, -remainingTenure)) /
+              monthlyRate;
+          total += pv;
+        } else {
+          // Use simple interest calculation or just remaining payments if no interest rate
+          final remainingPrincipal =
+              emi.monthlyEmiAmount * emi.tenureRemainingMonths;
+          double emiLiability = remainingPrincipal;
+          if (emi.interestRate != null && emi.interestRate! > 0) {
+            final interest = remainingPrincipal * (emi.interestRate! / 100);
+            emiLiability += interest;
+          }
+          total += emiLiability;
+        }
+      }
+      return total;
+    },
     loading: () => 0.0, // Return 0 while loading
     error: (e, s) => throw e, // Propagate error
   );

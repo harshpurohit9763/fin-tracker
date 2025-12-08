@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_finance/views/add_emi_screen.dart'; // Ensure this matches your file structure
+import 'package:personal_finance/views/add_emi_screen.dart';
 import 'package:personal_finance/helper/app_formater.dart';
 import 'package:personal_finance/models/emi_model.dart';
 import 'package:personal_finance/controllers/emi_provider.dart';
@@ -16,33 +16,49 @@ class EmiListScreen extends ConsumerWidget {
     final emisAsyncValue = ref.watch(emiListProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-
-    // Neumorphic background color needs to be slightly off-white/grey for the effect to pop
+    final currency = ref.watch(currencyProvider);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           // --- Modern Large Header ---
+          // SliverAppBar(
+          //   backgroundColor: theme.scaffoldBackgroundColor,
+          //   expandedHeight: 120.0,
+          //   floating: true,
+          //   pinned: true,
+          //   elevation: 0,
+          //   flexibleSpace: FlexibleSpaceBar(
+          //     titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+          //     title: Text(
+          //       'Loans & EMI',
+          //       style: theme.textTheme.headlineSmall?.copyWith(
+          //         fontWeight: FontWeight.w800,
+          //       ),
+          //     ),
+          //   ),
+          // ),
           SliverAppBar(
-            // The AppBar will now use the theme's default scaffold color
             backgroundColor: theme.scaffoldBackgroundColor,
-            expandedHeight: 120.0,
+            expandedHeight: 100.0,
             floating: true,
+            snap: true,
             pinned: true,
             elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
               title: Text(
                 'Loans & EMI',
-                style: theme.textTheme.headlineSmall?.copyWith(
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ),
           ),
 
-          // --- The List ---
+          // --- The List & Summary ---
           emisAsyncValue.when(
             data: (emis) {
               if (emis.isEmpty) {
@@ -67,16 +83,36 @@ class EmiListScreen extends ConsumerWidget {
                   ),
                 );
               }
+
+              // Calculate Totals
+              final totalMonthlyLiability = emis.fold(0.0, (sum, item) {
+                // Only count if not paid off
+                return item.tenureRemainingMonths > 0
+                    ? sum + item.monthlyEmiAmount
+                    : sum;
+              });
+
+              final activeLoansCount =
+                  emis.where((e) => e.tenureRemainingMonths > 0).length;
+
               return SliverPadding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      final emi = emis[index];
+                      // INDEX 0: Render the Total Summary Card
+                      if (index == 0) {
+                        return _buildTotalSummaryCard(context, theme,
+                            totalMonthlyLiability, activeLoansCount, currency);
+                      }
+
+                      // INDEX > 0: Render the EMI Items
+                      final emi = emis[index - 1]; // Offset index by 1
                       return _buildEmiCard(context, ref, emi);
                     },
-                    childCount: emis.length,
+                    // Add 1 to length to account for the Summary Card
+                    childCount: emis.length + 1,
                   ),
                 ),
               );
@@ -123,14 +159,96 @@ class EmiListScreen extends ConsumerWidget {
     );
   }
 
+  // --- NEW: Total Summary Card ---
+  Widget _buildTotalSummaryCard(BuildContext context, ThemeData theme,
+      double totalAmount, int activeCount, String currency) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24.0),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme
+                  .tertiary, // Using tertiary for a nice gradient shift
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.primary.withOpacity(0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.pie_chart_outline_rounded,
+                          color: Colors.white, size: 14),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Monthly Liability',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.more_horiz, color: Colors.white.withOpacity(0.5)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              AppFormatters.formatCurrency(totalAmount, currency),
+              style: theme.textTheme.displaySmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 32,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Total across $activeCount active loans',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmiCard(BuildContext context, WidgetRef ref, Emi emi) {
     final currency = ref.watch(currencyProvider);
     final theme = Theme.of(context);
     final isPaidOff = emi.tenureRemainingMonths <= 0;
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0),
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: GestureDetector(
         onTap: () {
           Navigator.push(
@@ -142,6 +260,10 @@ class EmiListScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: theme.cardColor,
             borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+                color: isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : Colors.transparent),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -154,7 +276,7 @@ class EmiListScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header: Icon + Name + Menu
+              // Header: Icon + Name
               Row(
                 children: [
                   Container(
@@ -234,14 +356,15 @@ class EmiListScreen extends ConsumerWidget {
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: () => _markAsPaid(context, ref, emi),
-                    icon: const Icon(Icons.check_rounded),
-                    label: const Text("Mark as Paid"),
+                    icon: const Icon(Icons.check_rounded, size: 18),
+                    label: const Text("Mark Paid"),
                     style: ElevatedButton.styleFrom(
                       foregroundColor: colorScheme.onPrimary,
                       backgroundColor: colorScheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 12),
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                   ),
@@ -263,17 +386,20 @@ class EmiListScreen extends ConsumerWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: theme.textTheme.labelSmall),
+            Text(label,
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: theme.hintColor)),
+            const SizedBox(height: 2),
             Text(value,
                 style: theme.textTheme.bodyMedium
-                    ?.copyWith(fontWeight: FontWeight.bold)),
+                    ?.copyWith(fontWeight: FontWeight.w600)),
           ],
         ),
       ],
     );
   }
 
-  // --- Dialogs ---
+  // --- Dialogs (Same as before) ---
 
   void _confirmDelete(BuildContext context, WidgetRef ref, int id) {
     showDialog(
@@ -284,7 +410,7 @@ class EmiListScreen extends ConsumerWidget {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: const Text('Delete Loan?', textAlign: TextAlign.center),
           content: const Text(
-            'This will permanently remove this loan record from your dashboard.',
+            'This will permanently remove this loan record.',
             textAlign: TextAlign.center,
           ),
           actionsAlignment: MainAxisAlignment.center,
@@ -317,9 +443,7 @@ class EmiListScreen extends ConsumerWidget {
 
     showDialog(
       context: context,
-      // The standard AlertDialog will now use the app's theme.
       builder: (dialogContext) {
-        // Glassmorphism Backdrop
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: AlertDialog(
@@ -333,7 +457,7 @@ class EmiListScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Confirm the amount paid for\n${emi.loanName}',
+                  'Confirm amount for\n${emi.loanName}',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: theme.hintColor),
                 ),
@@ -343,9 +467,13 @@ class EmiListScreen extends ConsumerWidget {
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Amount Paid',
-                    prefixText: '${ref.read(currencyProvider)} ',
-                  ),
+                      labelText: 'Amount Paid',
+                      prefixText: '${ref.read(currencyProvider)} ',
+                      filled: true,
+                      fillColor: isDark ? Colors.black12 : Colors.grey[100],
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none)),
                 ),
               ],
             ),
@@ -357,9 +485,10 @@ class EmiListScreen extends ConsumerWidget {
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  foregroundColor: Colors.white,
-                ),
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12))),
                 child: const Text('Confirm'),
                 onPressed: () {
                   final paidAmount = double.tryParse(amountController.text);

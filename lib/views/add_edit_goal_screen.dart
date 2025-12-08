@@ -1,7 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:intl/intl.dart'; // For date formatting
 import 'package:personal_finance/controllers/goal_provider.dart';
 import 'package:personal_finance/views/goal_model.dart';
 
@@ -28,7 +29,7 @@ class _AddEditGoalScreenState extends ConsumerState<AddEditGoalScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _targetAmountController;
-  DateTime _targetDate = DateTime.now();
+  DateTime _targetDate = DateTime.now().add(const Duration(days: 365));
   String _selectedIcon = 'other';
 
   @override
@@ -37,9 +38,10 @@ class _AddEditGoalScreenState extends ConsumerState<AddEditGoalScreen> {
     _nameController = TextEditingController(text: widget.goal?.name ?? '');
     _targetAmountController =
         TextEditingController(text: widget.goal?.targetAmount.toString() ?? '');
-    _targetDate = widget.goal?.targetDate ??
-        DateTime.now().add(const Duration(days: 365));
-    _selectedIcon = widget.goal?.icon ?? 'other';
+    if (widget.goal != null) {
+      _targetDate = widget.goal!.targetDate;
+      _selectedIcon = widget.goal!.icon;
+    }
   }
 
   @override
@@ -55,6 +57,18 @@ class _AddEditGoalScreenState extends ConsumerState<AddEditGoalScreen> {
       initialDate: _targetDate,
       firstDate: DateTime.now(),
       lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Theme.of(context).colorScheme.primary,
+              onPrimary: Colors.white,
+              onSurface: Theme.of(context).textTheme.bodyLarge!.color!,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null && picked != _targetDate) {
       setState(() {
@@ -88,75 +102,139 @@ class _AddEditGoalScreenState extends ConsumerState<AddEditGoalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Helper for inputs
+    InputDecoration getDecoration(String label, IconData icon) {
+      return InputDecoration(
+        labelText: label,
+        prefixIcon:
+            Icon(icon, color: theme.colorScheme.primary.withOpacity(0.7)),
+        filled: true,
+        fillColor: isDark
+            ? Colors.white.withOpacity(0.05)
+            : Colors.grey.withOpacity(0.05),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      );
+    }
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        leading: CupertinoNavigationBarBackButton(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withOpacity(0.1)
+                  : Colors.grey.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(widget.goal == null ? 'Add Goal' : 'Edit Goal'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.check),
-            onPressed: _saveGoal,
-          ),
-        ],
+        centerTitle: true,
+        title: Text(
+          widget.goal == null ? 'New Goal' : 'Edit Goal',
+          style:
+              theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // --- Name Input ---
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Goal Name',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.flag_outlined),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a name for your goal';
-                  }
-                  return null;
-                },
+                decoration: getDecoration('Goal Name', Icons.flag_rounded),
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'Please enter a name'
+                    : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
+
+              // --- Amount Input ---
               TextFormField(
                 controller: _targetAmountController,
-                decoration: const InputDecoration(
-                  labelText: 'Target Amount',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.attach_money),
-                ),
-                keyboardType: TextInputType.number,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration:
+                    getDecoration('Target Amount', Icons.track_changes_rounded),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))
+                ],
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a target amount';
-                  }
+                  if (value == null || value.isEmpty)
+                    return 'Please enter amount';
                   if (double.tryParse(value) == null ||
                       double.parse(value) <= 0) {
-                    return 'Please enter a valid positive amount';
+                    return 'Enter valid amount';
                   }
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
-              ListTile(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                  side: BorderSide(color: Colors.grey.shade400),
-                ),
-                title: Text(
-                    'Target Date: ${MaterialLocalizations.of(context).formatFullDate(_targetDate)}'),
-                trailing: const Icon(Icons.calendar_today),
+              const SizedBox(height: 20),
+
+              // --- Date Picker ---
+              InkWell(
                 onTap: () => _selectDate(context),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withOpacity(0.05)
+                        : Colors.grey.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_today_rounded,
+                          color: theme.colorScheme.primary.withOpacity(0.7)),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Target Date',
+                              style: theme.textTheme.labelSmall
+                                  ?.copyWith(color: theme.hintColor)),
+                          const SizedBox(height: 2),
+                          Text(
+                            DateFormat.yMMMd().format(_targetDate),
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.arrow_drop_down_rounded),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 24),
-              Text('Select an Icon',
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 12),
+
+              const SizedBox(height: 32),
+
+              // --- Icon Selector ---
+              Text(
+                'Choose Icon',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -170,35 +248,69 @@ class _AddEditGoalScreenState extends ConsumerState<AddEditGoalScreen> {
                   final key = goalIcons.keys.elementAt(index);
                   final icon = goalIcons[key]!;
                   final isSelected = _selectedIcon == key;
+
                   return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedIcon = key;
-                      });
-                    },
-                    child: Container(
+                    onTap: () => setState(() => _selectedIcon = key),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : Theme.of(context).colorScheme.surfaceVariant,
-                        borderRadius: BorderRadius.circular(16),
-                        border: isSelected
-                            ? Border.all(
-                                color: Theme.of(context).colorScheme.primary,
-                                width: 2)
-                            : null,
-                      ),
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : (isDark
+                                  ? Colors.white.withOpacity(0.05)
+                                  : Colors.white),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                      color: theme.colorScheme.primary
+                                          .withOpacity(0.4),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4))
+                                ]
+                              : [
+                                  BoxShadow(
+                                      color: Colors.black.withOpacity(0.03),
+                                      blurRadius: 5,
+                                      offset: const Offset(0, 2))
+                                ],
+                          border: Border.all(
+                              color: isSelected
+                                  ? Colors.transparent
+                                  : theme.dividerColor.withOpacity(0.1))),
                       child: Icon(
                         icon,
-                        size: 32,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.onPrimaryContainer
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: 28,
+                        color:
+                            isSelected ? Colors.white : theme.iconTheme.color,
                       ),
                     ),
                   );
                 },
               ),
+
+              const SizedBox(height: 40),
+
+              // --- Save Button ---
+              SizedBox(
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _saveGoal,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: Text(
+                    widget.goal == null ? 'Create Goal' : 'Save Changes',
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),

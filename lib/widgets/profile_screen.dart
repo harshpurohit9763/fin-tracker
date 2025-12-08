@@ -175,6 +175,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           decoration: const InputDecoration(
             border: InputBorder.none,
             hintText: "Enter your name",
+            suffixIcon: Icon(Icons.edit_outlined, size: 16),
             suffixIconConstraints: BoxConstraints(minWidth: 24, minHeight: 24),
           ),
         ),

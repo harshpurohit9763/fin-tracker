@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 class DatabaseHelper {
   // Table and column names
   static const String dbName = 'expense_tracker.db';
-  static const int dbVersion = 5;
+  static const int dbVersion = 7;
 
   // Expenses Table
   static const String expensesTable = 'expenses';
@@ -49,6 +49,9 @@ class DatabaseHelper {
   static const String colTotalTenureMonths = 'total_tenure_months';
   static const String colTenureRemainingMonths = 'tenure_remaining_months';
   static const String colNextDueDate = 'next_due_date'; // Unix Timestamp
+  static const String colStartDate = 'start_date';
+  static const String colIsCompoundInterest =
+      'is_compound_interest'; // New boolean column
 
   // Budgets Table
   static const String budgetsTable = 'budgets';
@@ -112,25 +115,41 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      // Migrate from version 1 to 2
-      await db.execute(
-          'ALTER TABLE $incomeTable ADD COLUMN $colIncomeSource TEXT;');
-    }
-    if (oldVersion < 3) {
-      // Migrate from version 2 to 3
-      await db.execute(
-          'ALTER TABLE $expensesTable ADD COLUMN $colScheduledAmount REAL;');
-      await db.execute(
-          'ALTER TABLE $expensesTable ADD COLUMN $colTransactionType TEXT;');
-    }
-    if (oldVersion < 4) {
-      // Migrate from version 3 to 4
-      await _createGoalsTable(db);
-    }
-    if (oldVersion < 5) {
-      // Migrate from version 4 to 5
-      await _createBadgesTable(db);
+    // This loop ensures that migrations are applied sequentially.
+    // It's a more robust pattern than a series of 'if' statements.
+    for (var i = oldVersion + 1; i <= newVersion; i++) {
+      switch (i) {
+        case 2:
+          // Migrate from version 1 to 2
+          await db.execute(
+              'ALTER TABLE $incomeTable ADD COLUMN $colIncomeSource TEXT;');
+          break;
+        case 3:
+          // Migrate from version 2 to 3
+          await db.execute(
+              'ALTER TABLE $expensesTable ADD COLUMN $colScheduledAmount REAL;');
+          await db.execute(
+              'ALTER TABLE $expensesTable ADD COLUMN $colTransactionType TEXT;');
+          break;
+        case 4:
+          // Migrate from version 3 to 4
+          await _createGoalsTable(db);
+          break;
+        case 5:
+          // Migrate from version 4 to 5
+          await _createBadgesTable(db);
+          break;
+        case 6:
+          // From v5 to v6: Add start_date to emis table
+          await db.execute(
+              'ALTER TABLE $emisTable ADD COLUMN $colStartDate INTEGER NOT NULL DEFAULT 0;');
+          break;
+        case 7:
+          // From v6 to v7: Add is_compound_interest to emis table
+          await db.execute(
+              'ALTER TABLE $emisTable ADD COLUMN $colIsCompoundInterest INTEGER NOT NULL DEFAULT 0;');
+          break;
+      }
     }
   }
 
@@ -181,7 +200,9 @@ class DatabaseHelper {
         $colInterestRate REAL,
         $colTotalTenureMonths INTEGER NOT NULL,
         $colTenureRemainingMonths INTEGER NOT NULL,
-        $colNextDueDate INTEGER NOT NULL
+        $colNextDueDate INTEGER NOT NULL,
+        $colStartDate INTEGER NOT NULL,
+        $colIsCompoundInterest INTEGER NOT NULL DEFAULT 0
       )
     ''');
 

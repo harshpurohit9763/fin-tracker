@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:personal_finance/helper/app_formater.dart';
 import 'package:personal_finance/models/emi_model.dart';
 import 'package:personal_finance/controllers/emi_provider.dart';
+import 'package:personal_finance/controllers/shared_preferences_provider.dart'; // Import isAmoledProvider
 import 'package:personal_finance/controllers/shared_preferences_provider.dart';
 
 class AddEmiScreen extends ConsumerStatefulWidget {
@@ -18,10 +19,12 @@ class AddEmiScreen extends ConsumerStatefulWidget {
 class _AddEmiScreenState extends ConsumerState<AddEmiScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _loanNameController;
-  late TextEditingController _totalAmountController;
   late TextEditingController _emiAmountController;
   late TextEditingController _tenureController;
+  late TextEditingController _bankNameController;
+  late TextEditingController _interestRateController;
   DateTime _startDate = DateTime.now();
+  bool _isCompoundInterest = false;
 
   bool get _isEditing => widget.emi != null;
 
@@ -29,24 +32,27 @@ class _AddEmiScreenState extends ConsumerState<AddEmiScreen> {
   void initState() {
     super.initState();
     _loanNameController = TextEditingController(text: widget.emi?.loanName);
-    _totalAmountController =
-        TextEditingController(text: widget.emi?.totalAmount.toString());
-    _emiAmountController =
-        TextEditingController(text: widget.emi?.monthlyEmiAmount.toString());
-    _tenureController =
-        TextEditingController(text: widget.emi?.totalTenureMonths.toString());
+    _emiAmountController = TextEditingController(
+        text: widget.emi?.monthlyEmiAmount.toString() ?? '');
+    _tenureController = TextEditingController(
+        text: widget.emi?.totalTenureMonths.toString() ?? '');
+    _bankNameController = TextEditingController(text: widget.emi?.bankName);
+    _interestRateController =
+        TextEditingController(text: widget.emi?.interestRate?.toString() ?? '');
 
     if (_isEditing) {
       _startDate = widget.emi!.startDate;
+      _isCompoundInterest = widget.emi!.isCompoundInterest;
     }
   }
 
   @override
   void dispose() {
     _loanNameController.dispose();
-    _totalAmountController.dispose();
     _emiAmountController.dispose();
     _tenureController.dispose();
+    _bankNameController.dispose();
+    _interestRateController.dispose();
     super.dispose();
   }
 
@@ -76,9 +82,10 @@ class _AddEmiScreenState extends ConsumerState<AddEmiScreen> {
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final loanName = _loanNameController.text;
-      final totalAmount = double.parse(_totalAmountController.text);
       final emiAmount = double.parse(_emiAmountController.text);
       final totalTenure = int.parse(_tenureController.text);
+      final bankName = _bankNameController.text;
+      final interestRate = double.tryParse(_interestRateController.text);
 
       final Emi emiToSave;
 
@@ -87,22 +94,26 @@ class _AddEmiScreenState extends ConsumerState<AddEmiScreen> {
         // The state (remaining tenure, next due date) is managed by "Mark as Paid".
         emiToSave = widget.emi!.copyWith(
           loanName: loanName,
-          totalAmount: totalAmount,
           monthlyEmiAmount: emiAmount,
           startDate: _startDate,
           totalTenureMonths: totalTenure,
+          bankName: bankName.isNotEmpty ? bankName : null,
+          interestRate: interestRate,
+          isCompoundInterest: _isCompoundInterest,
         );
       } else {
         // For a new loan, we set the initial state.
         emiToSave = Emi(
           loanName: loanName,
-          totalAmount: totalAmount,
           monthlyEmiAmount: emiAmount,
           startDate: _startDate,
           totalTenureMonths: totalTenure,
           tenureRemainingMonths: totalTenure,
           nextDueDate:
               DateTime(_startDate.year, _startDate.month + 1, _startDate.day),
+          bankName: bankName.isNotEmpty ? bankName : null,
+          interestRate: interestRate,
+          isCompoundInterest: _isCompoundInterest,
         );
       }
 
@@ -112,7 +123,6 @@ class _AddEmiScreenState extends ConsumerState<AddEmiScreen> {
         await ref.read(emiListProvider.notifier).addEmi(emiToSave);
       }
 
-      ref.invalidate(emiListProvider);
       if (mounted) Navigator.of(context).pop();
     }
   }
@@ -122,6 +132,7 @@ class _AddEmiScreenState extends ConsumerState<AddEmiScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final isAmoled = ref.watch(isAmoledProvider); // Watch isAmoledProvider
     final currency = ref.watch(currencyProvider);
 
     InputDecoration getModernInputDecoration(String label, IconData icon) {
@@ -150,7 +161,7 @@ class _AddEmiScreenState extends ConsumerState<AddEmiScreen> {
     }
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: isAmoled ? Colors.black : theme.colorScheme.background,
       appBar: AppBar(
         title: Text(
           _isEditing ? 'Edit Loan' : 'New Loan',
@@ -246,12 +257,18 @@ class _AddEmiScreenState extends ConsumerState<AddEmiScreen> {
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
-                      controller: _totalAmountController,
+                      controller: _bankNameController,
                       decoration: getModernInputDecoration(
-                          'Total Loan Amount', Icons.monetization_on_rounded),
+                          'Bank Name (Optional)',
+                          Icons.account_balance_rounded),
+                    ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: _interestRateController,
+                      decoration: getModernInputDecoration(
+                          'Interest Rate % (Optional)', Icons.percent_rounded),
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
-                      validator: (v) => v!.isEmpty ? 'Required' : null,
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
@@ -289,6 +306,24 @@ class _AddEmiScreenState extends ConsumerState<AddEmiScreen> {
                             const Icon(Icons.arrow_drop_down_rounded),
                           ],
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SwitchListTile(
+                      title: const Text('Use Compound Interest Formula'),
+                      subtitle: const Text(
+                          'Calculates liability based on outstanding principal. Turn off for simple interest calculation.'),
+                      value: _isCompoundInterest,
+                      onChanged: (bool value) {
+                        setState(() {
+                          _isCompoundInterest = value;
+                        });
+                      },
+                      secondary: Icon(Icons.calculate_rounded,
+                          color: colorScheme.primary.withOpacity(0.7)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                   ],

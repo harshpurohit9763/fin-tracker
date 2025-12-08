@@ -1,285 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:personal_finance/helper/app_formater.dart';
-// import 'package:personal_finance/models/asset_model.dart';
-// import 'package:personal_finance/controllers/asset_provider.dart';
-// import 'package:personal_finance/controllers/shared_preferences_provider.dart';
-
-// class ManageAssetsScreen extends ConsumerStatefulWidget {
-//   const ManageAssetsScreen({super.key});
-
-//   @override
-//   ConsumerState<ManageAssetsScreen> createState() => _ManageAssetsScreenState();
-// }
-
-// class _ManageAssetsScreenState extends ConsumerState<ManageAssetsScreen> {
-//   bool _isSelectionMode = false;
-//   final Set<int> _selectedAssets = {};
-
-//   // A map of available icons
-//   final Map<String, IconData> _availableIcons = {
-//     'account_balance': Icons.account_balance,
-//     'home': Icons.home,
-//     'directions_car': Icons.directions_car,
-//     'savings': Icons.savings,
-//     'store': Icons.store,
-//     'business': Icons.business,
-//   };
-
-//   void _toggleSelection(int assetId) {
-//     setState(() {
-//       if (_selectedAssets.contains(assetId)) {
-//         _selectedAssets.remove(assetId);
-//         if (_selectedAssets.isEmpty) {
-//           _isSelectionMode = false;
-//         }
-//       } else {
-//         _selectedAssets.add(assetId);
-//       }
-//     });
-//   }
-
-//   void _enterSelectionMode(int assetId) {
-//     setState(() {
-//       _isSelectionMode = true;
-//       _selectedAssets.add(assetId);
-//     });
-//   }
-
-//   void _exitSelectionMode() {
-//     setState(() {
-//       _isSelectionMode = false;
-//       _selectedAssets.clear();
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final assetsAsync = ref.watch(assetListProvider);
-//     final currency = ref.watch(currencyProvider);
-
-//     return Scaffold(
-//       body: CustomScrollView(
-//         slivers: [
-//           SliverAppBar(
-//             pinned: true, // Keep it pinned for the actions
-//             leading: _isSelectionMode
-//                 ? IconButton(
-//                     icon: const Icon(Icons.close),
-//                     onPressed: _exitSelectionMode,
-//                   )
-//                 : null,
-//             title: Text(_isSelectionMode
-//                 ? '${_selectedAssets.length} selected'
-//                 : 'Manage Assets'),
-//             actions: _isSelectionMode
-//                 ? [
-//                     IconButton(
-//                       icon: const Icon(Icons.delete),
-//                       onPressed: () => _confirmDeleteMultiple(context, ref),
-//                     ),
-//                   ]
-//                 : [],
-//           ),
-//           assetsAsync.when(
-//             data: (assets) {
-//               if (assets.isEmpty) {
-//                 return const SliverFillRemaining(
-//                     child: Center(child: Text('No assets added yet.')));
-//               }
-//               return SliverList(
-//                 delegate: SliverChildBuilderDelegate(
-//                   (context, index) {
-//                     final asset = assets[index];
-//                     final isSelected = _selectedAssets.contains(asset.id!);
-//                     return ListTile(
-//                       tileColor: isSelected
-//                           ? Theme.of(context)
-//                               .colorScheme
-//                               .primary
-//                               .withOpacity(0.2)
-//                           : null,
-//                       leading: CircleAvatar(
-//                         child: Icon(
-//                             _availableIcons[asset.icon] ?? Icons.question_mark),
-//                       ),
-//                       title: Text(asset.name),
-//                       trailing: Column(
-//                         crossAxisAlignment: CrossAxisAlignment.end,
-//                         mainAxisAlignment: MainAxisAlignment.center,
-//                         children: [
-//                           Text(AppFormatters.formatCurrency(
-//                               asset.value, currency)),
-//                           if (asset.yearlyAppreciation != null &&
-//                               asset.yearlyAppreciation! > 0)
-//                             Text('${asset.yearlyAppreciation}% p.a.',
-//                                 style: const TextStyle(
-//                                     color: Colors.green, fontSize: 12)),
-//                         ],
-//                       ),
-//                       onTap: () {
-//                         if (_isSelectionMode) {
-//                           _toggleSelection(asset.id!);
-//                         } else {
-//                           _showAddEditAssetDialog(context, ref, asset: asset);
-//                         }
-//                       },
-//                       onLongPress: () {
-//                         if (!_isSelectionMode) {
-//                           _enterSelectionMode(asset.id!);
-//                         }
-//                       },
-//                     );
-//                   },
-//                   childCount: assets.length,
-//                 ),
-//               );
-//             },
-//             loading: () => const SliverFillRemaining(
-//                 child: Center(child: CircularProgressIndicator())),
-//             error: (err, stack) =>
-//                 SliverFillRemaining(child: Center(child: Text('Error: $err'))),
-//           ),
-//         ],
-//       ),
-//       floatingActionButton: FloatingActionButton(
-//         onPressed: () => _showAddEditAssetDialog(context, ref),
-//         child: const Icon(Icons.add),
-//       ),
-//     );
-//   }
-
-//   void _confirmDeleteMultiple(BuildContext context, WidgetRef ref) {
-//     showDialog(
-//       context: context,
-//       builder: (dialogContext) => AlertDialog(
-//         title: Text('Delete ${_selectedAssets.length} Assets?'),
-//         content: const Text(
-//             'Are you sure you want to delete the selected assets? This action cannot be undone.'),
-//         actions: [
-//           TextButton(
-//               onPressed: () => Navigator.of(dialogContext).pop(),
-//               child: const Text('Cancel')),
-//           TextButton(
-//               onPressed: () {
-//                 ref
-//                     .read(assetListProvider.notifier)
-//                     .deleteMultipleAssets(_selectedAssets.toList());
-//                 _exitSelectionMode();
-//                 Navigator.of(dialogContext).pop();
-//               },
-//               child: const Text('Delete', style: TextStyle(color: Colors.red))),
-//         ],
-//       ),
-//     );
-//   }
-
-//   void _showAddEditAssetDialog(BuildContext context, WidgetRef ref,
-//       {Asset? asset}) {
-//     final isEditing = asset != null;
-//     final formKey = GlobalKey<FormState>();
-//     final nameController = TextEditingController(text: asset?.name);
-//     final valueController =
-//         TextEditingController(text: asset?.value.toString());
-//     final appreciationController =
-//         TextEditingController(text: asset?.yearlyAppreciation?.toString());
-//     String? selectedIcon = asset?.icon;
-
-//     showDialog(
-//       context: context,
-//       builder: (dialogContext) => AlertDialog(
-//         title: Text(isEditing ? 'Edit Asset' : 'Add Asset'),
-//         content: StatefulBuilder(
-//           builder: (BuildContext context, StateSetter setState) {
-//             return Form(
-//               key: formKey,
-//               child: SingleChildScrollView(
-//                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-//                   const Text('Select Icon'),
-//                   Wrap(
-//                     spacing: 8.0,
-//                     children: _availableIcons.entries.map((entry) {
-//                       return ChoiceChip(
-//                         label: Icon(entry.value),
-//                         selected: selectedIcon == entry.key,
-//                         onSelected: (isSelected) {
-//                           setState(() {
-//                             selectedIcon = isSelected ? entry.key : null;
-//                           });
-//                         },
-//                       );
-//                     }).toList(),
-//                   ),
-//                   const SizedBox(height: 16),
-//                   TextFormField(
-//                     controller: nameController,
-//                     decoration: const InputDecoration(
-//                         labelText: 'Asset Name (e.g., Savings Account)'),
-//                     validator: (v) => v!.isEmpty ? 'Please enter a name' : null,
-//                   ),
-//                   TextFormField(
-//                     controller: valueController,
-//                     decoration:
-//                         const InputDecoration(labelText: 'Current Value'),
-//                     keyboardType:
-//                         const TextInputType.numberWithOptions(decimal: true),
-//                     inputFormatters: [
-//                       FilteringTextInputFormatter.allow(
-//                           RegExp(r'^\d*\.?\d{0,2}'))
-//                     ],
-//                     validator: (v) =>
-//                         v!.isEmpty ? 'Please enter a value' : null,
-//                   ),
-//                   TextFormField(
-//                     controller: appreciationController,
-//                     decoration: const InputDecoration(
-//                         labelText: 'Yearly Appreciation % (Optional)'),
-//                     keyboardType:
-//                         const TextInputType.numberWithOptions(decimal: true),
-//                     inputFormatters: [
-//                       FilteringTextInputFormatter.allow(
-//                           RegExp(r'^\d*\.?\d{0,2}'))
-//                     ],
-//                   ),
-//                 ]),
-//               ),
-//             );
-//           },
-//         ),
-//         actions: [
-//           TextButton(
-//               onPressed: () => Navigator.of(dialogContext).pop(),
-//               child: const Text('Cancel')),
-//           ElevatedButton(
-//             onPressed: () {
-//               if (formKey.currentState!.validate()) {
-//                 final assetToSave = Asset(
-//                     id: asset?.id,
-//                     name: nameController.text,
-//                     value: double.parse(valueController.text),
-//                     yearlyAppreciation: appreciationController.text.isNotEmpty
-//                         ? double.parse(appreciationController.text)
-//                         : null,
-//                     icon: selectedIcon);
-
-//                 if (isEditing) {
-//                   ref.read(assetListProvider.notifier).updateAsset(assetToSave);
-//                 } else {
-//                   ref.read(assetListProvider.notifier).addAsset(assetToSave);
-//                 }
-
-//                 Navigator.of(dialogContext).pop();
-//               }
-//             },
-//             child: const Text('Save'),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -350,22 +68,21 @@ class _ManageAssetsScreenState extends ConsumerState<ManageAssetsScreen> {
         slivers: [
           // --- Modern App Bar ---
           SliverAppBar(
-            expandedHeight: 120.0,
-            floating: true,
-            pinned: true,
             backgroundColor: theme.scaffoldBackgroundColor,
+            expandedHeight: 100.0,
+            floating: true,
+            snap: true,
+            pinned: true,
             elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
               title: Text(
                 _isSelectionMode
                     ? '${_selectedAssets.length} Selected'
                     : 'My Assets',
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black87,
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
-                  fontSize: 20, // Adjusted for sliver scaling
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ),
@@ -386,34 +103,53 @@ class _ManageAssetsScreenState extends ConsumerState<ManageAssetsScreen> {
                 : [],
           ),
 
-          // --- Asset List ---
+          // --- Asset List & Summary ---
           assetsAsync.when(
             data: (assets) {
-              if (assets.isEmpty) {
-                return SliverFillRemaining(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.account_balance_wallet_outlined,
-                            size: 64,
-                            color: theme.disabledColor.withOpacity(0.5)),
-                        const SizedBox(height: 16),
-                        Text('No assets found',
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(color: theme.disabledColor)),
-                      ],
-                    ),
-                  ),
-                );
-              }
+              // Calculate Total Asset Value
+              final totalValue =
+                  assets.fold(0.0, (sum, item) => sum + item.value);
+
               return SliverPadding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      final asset = assets[index];
+                      // ---------------------------------------------
+                      // INDEX 0: Total Summary Card
+                      // ---------------------------------------------
+                      if (index == 0) {
+                        return _buildTotalAssetsCard(
+                            context, totalValue, currency, assets.length);
+                      }
+
+                      // ---------------------------------------------
+                      // INDEX 1: Empty State (If no assets)
+                      // ---------------------------------------------
+                      if (assets.isEmpty) {
+                        return Container(
+                          height: 300,
+                          alignment: Alignment.center,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.account_balance_wallet_outlined,
+                                  size: 64,
+                                  color: theme.disabledColor.withOpacity(0.5)),
+                              const SizedBox(height: 16),
+                              Text('No assets found',
+                                  style: theme.textTheme.titleMedium
+                                      ?.copyWith(color: theme.disabledColor)),
+                            ],
+                          ),
+                        );
+                      }
+
+                      // ---------------------------------------------
+                      // INDEX > 0: Asset List Items
+                      // ---------------------------------------------
+                      final asset = assets[index - 1]; // Offset index
                       final isSelected = _selectedAssets.contains(asset.id!);
 
                       return _buildAssetCard(
@@ -423,7 +159,8 @@ class _ManageAssetsScreenState extends ConsumerState<ManageAssetsScreen> {
                         isSelected: isSelected,
                       );
                     },
-                    childCount: assets.length,
+                    // If empty, count is 2 (Card + EmptyMsg). If data, count is N + 1.
+                    childCount: assets.isEmpty ? 2 : assets.length + 1,
                   ),
                 ),
               );
@@ -477,6 +214,88 @@ class _ManageAssetsScreenState extends ConsumerState<ManageAssetsScreen> {
                         color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ),
+    );
+  }
+
+  // --- NEW: Total Wealth Summary Card ---
+  Widget _buildTotalAssetsCard(
+      BuildContext context, double totalValue, String currency, int count) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24.0),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.primary,
+              colorScheme.primary.withOpacity(0.7),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.primary.withOpacity(0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.savings_outlined,
+                          color: Colors.white, size: 14),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Total Wealth',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.more_horiz, color: Colors.white.withOpacity(0.5)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              AppFormatters.formatCurrency(totalValue, currency),
+              style: theme.textTheme.displaySmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 32,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Across $count active assets',
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -34,7 +34,9 @@ class IncomeCard extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       decoration: BoxDecoration(
         // Soft background color based on theme
-        color: theme.cardColor,
+        color: isDark
+            ? const Color(0xFF1E1E1E) // Dark graphite for Dark Mode
+            : Colors.white, // Clean white for Light Mode
         borderRadius: BorderRadius.circular(24),
         // Subtle Border
         border: Border.all(
@@ -116,7 +118,8 @@ class IncomeCard extends ConsumerWidget {
                           "+${AppFormatters.formatCurrency(income.amount, currency)}",
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w800,
-                            color: accentColor,
+                            color: Colors.greenAccent[
+                                700], // Keep income green or use accent
                             fontSize: 18,
                           ),
                         ),
